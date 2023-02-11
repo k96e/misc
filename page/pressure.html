@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pressure</title>
+  </head>
+  <body>
+    <h1 id="res">Pressure Tests</h1>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pressure@2.2.0/dist/pressure.min.js"></script>
+    <script type="text/javascript">
+    var res = document.getElementById('res');
+    var lastValue = 0, minInterval = 1;
+    var block = {
+        start: function(event) {
+            console.log('start', event);
+        },
+
+        change: function(force, event) {
+            res.innerHTML = force;
+            console.log('change', force);
+            if((Math.abs(force - lastValue) < minInterval) && (force != lastValue)){
+                minInterval = Math.abs(force - lastValue);
+            }
+            lastValue = force;
+        },
+
+        startDeepPress: function(event) {
+            console.log('start deep press', event);
+        },
+
+        endDeepPress: function() {
+            console.log('end deep press');
+        },
+
+        end: function() {
+            console.log('end');
+            res.innerHTML = "end<br>minInterval:"+minInterval
+                +"<br>Estimated resolution:"+(1/minInterval).toFixed(2)
+            minInterval = 1;
+            lastValue = 0;
+        },
+
+        unsupported: function() {
+            console.log(res);
+            res.innerHTML = 'Your device / browser does not support this :(';
+        }
+    }
+
+    Pressure.set(document.documentElement, block);
+    </script>
+  </body>
+</html>
