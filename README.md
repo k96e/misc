@@ -9,5 +9,5 @@ CardRead.py / CardWrite.py
 mp3tag.py
 >从jbsou.cn获取音乐信息并写入mp3文件
 
-page/pressure.html
+[page/pressure.html](https://k96e.github.io/scripts/page/pressure.html)
 >通过pressure.js在浏览器端获取屏幕压感数据
