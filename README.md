@@ -12,5 +12,8 @@ mp3tag.py
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
-page/pressure.html
+NeoClock.py
+>[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
+
+[page/pressure.html](https://k96e.github.io/scripts/page/pressure.html)
 >通过pressure.js在浏览器端获取屏幕压感数据
