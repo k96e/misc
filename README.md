@@ -9,6 +9,9 @@ CardRead.py / CardWrite.py
 mp3tag.py
 >从jbsou.cn获取音乐信息并写入mp3文件
 
+SwitchArray.py
+>2023新课标高考适应性测试(四省联考)数学第12题的DFS解法
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
