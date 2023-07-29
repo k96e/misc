@@ -12,6 +12,9 @@ mp3tag.py
 SwitchArray.py
 >2023新课标高考适应性测试(四省联考)数学第12题的DFS解法
 
+pixivSearch.py
+>将pixiv插画搜索结果按收藏/浏览比排序
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
