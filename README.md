@@ -20,3 +20,6 @@ NeoClock.py
 
 [page/pressure.html](https://k96e.github.io/misc/page/pressure.html)
 >通过pressure.js在浏览器端获取屏幕压感数据
+
+[page/search.html](https://k96e.github.io/misc/page/search.html)
+>多端搜索网页

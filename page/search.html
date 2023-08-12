@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>圆角搜索框</title>
+  <style>
+    .search-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 200px;
+        margin-top: 80px;
+    }
+
+    #searchbar {
+        border-radius: 20px;
+        padding: 10px;
+        width: 80%;
+        font-size: large;
+    }
+
+    .btn-grid {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .searchbtn {
+        border-radius: 20px;
+        width: 20%;
+        height: 40px;
+        flex-basis: 40%;
+        margin: 10px;
+        border-width: 1px ;
+        font-size: large;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-container">
+      <textarea id="searchbar" placeholder="Search..." autocomplete="off"></textarea>
+  </div>
+  <div class="btn-grid">
+    <button class="searchbtn" id="0">Google</button>
+    <button class="searchbtn" id="1">Baidu</button>
+    <button class="searchbtn" id="2">Bing</button>
+    <button class="searchbtn" id="3">Twitter</button>
+    <button class="searchbtn" id="4">Github</button>
+    <button class="searchbtn" id="5">Bilibili</button>
+    <button class="searchbtn" id="6">Zhihu</button>
+    <button class="searchbtn" id="7">Weibo</button>
+  </div>
+    <script>
+        var searchUrls = ["https://www.google.com/search?q=",
+            "https://www.baidu.com/s?wd=",
+            "https://cn.bing.com/search?q=",
+            "https://twitter.com/search?q=",
+            "https://github.com/search?type=repositories&q=",
+            "https://search.bilibili.com/all?keyword=",
+            "https://www.zhihu.com/search?type=content&q=",
+            "https://s.weibo.com/weibo?q=",];
+        var searchbar = document.getElementById("searchbar");
+        var btns = document.getElementsByClassName("searchbtn");
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].onclick = function (e) {
+                console.log(e);
+                window.open(searchUrls[Number(e.target.id)] + searchbar.value);
+            }
+        }
+    </script>
+</body>
+</html>
