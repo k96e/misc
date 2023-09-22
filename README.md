@@ -23,3 +23,6 @@ NeoClock.py
 
 [page/search.html](https://k96e.github.io/misc/page/search.html)
 >多端搜索网页
+
+[page/ok/index.html](https://k96e.github.io/misc/page/ok/index.html)
+>圣园未花的ok~

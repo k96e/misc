@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK~</title>
+    <style>
+        /* 使用 CSS 来实现水平和垂直居中 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+    touch-action: none; /* 禁止长按操作 */
+    -webkit-touch-callout: none; /* 禁止iOS长按弹出菜单 */
+    touch-action: none;
+    -webkit-touch-callout: none;
+
+    zoom: 100%;
+    touch-action: manipulation; /* 在移动设备上禁止双指缩放 */
+
+    user-select: none;
+    -webkit-user-select: none; /* 兼容WebKit浏览器（如Chrome和Safari） */
+    -moz-user-select: none; /* 兼容Firefox */
+    -ms-user-select: none; /* 兼容IE/Edge */
+        }
+        img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <img src="ok.png" id="mika">
+</body>
+<script>
+var mika = document.getElementById("mika");
+mika.onclick = function() {
+    var mp3 = new Audio("https://cdnimg.gamekee.com/wiki2.0/images/w_0/h_0/829/223205/2023/0/24/966920.ogg");
+            mp3.load();
+            mp3.play();
+        
+}
+
+</script>
+</html>
