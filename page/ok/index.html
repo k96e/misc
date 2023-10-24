@@ -35,13 +35,14 @@
     <img src="ok.png" id="mika">
 </body>
 <script>
-var mika = document.getElementById("mika");
-mika.onclick = function() {
-    var mp3 = new Audio("https://cdnimg.gamekee.com/wiki2.0/images/w_0/h_0/829/223205/2023/0/24/966920.ogg");
-            mp3.load();
-            mp3.play();
-        
-}
-
+    var mika = document.getElementById("mika");
+    mika.onclick = function() {
+        var mp3 = new Audio("https://cdnimg.gamekee.com/wiki2.0/images/w_0/h_0/829/223205/2023/0/24/966920.ogg");
+        mp3.load();
+        mp3.play();
+    }
+    document.addEventListener('keydown', function(){
+        mika.click();
+    });
 </script>
 </html>
