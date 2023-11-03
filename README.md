@@ -15,6 +15,9 @@ SwitchArray.py
 pixivSearch.py
 >将pixiv插画搜索结果按收藏/浏览比排序
 
+randomBin.py
+>随机生成指定大小的二进制文件
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
