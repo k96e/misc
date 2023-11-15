@@ -18,6 +18,9 @@ pixivSearch.py
 randomBin.py
 >随机生成指定大小的二进制文件
 
+randomOTP.py
+>随机生成TOTP密钥及二维码
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
