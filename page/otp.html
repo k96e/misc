@@ -18,7 +18,7 @@
         var key = getQueryString("key");
         const code = document.getElementById('value');
         if(key == null){
-            code.innerHTML = "NoCode";
+            code.innerHTML = "NoKey!";
         }
         var totp = new jsOTP.totp();
         try{
