@@ -29,3 +29,6 @@ NeoClock.py
 
 [page/ok/index.html](https://k96e.github.io/misc/page/ok/index.html)
 >圣园未花的ok~
+
+[page/otp.html](https://k96e.github.io/misc/page/otp.html)
+>TOTP密钥生成器

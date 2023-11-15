@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TOTP</title>
+  </head>
+  <body>
+    <h1 id="value" style="font-family: monospace;"></h1>
+
+  </body>
+    <script type="text/javascript" src="https://jiangts.github.io/JS-OTP/dist/jsOTP.min.js"></script>
+    <script type="text/javascript">
+        function getQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return unescape(r[2]); return null;
+        }
+        var key = getQueryString("key");
+        const code = document.getElementById('value');
+        if(key == null){
+            code.innerHTML = "NoCode";
+        }
+        var totp = new jsOTP.totp();
+        try{
+            var timeCode = totp.getOtp(key);
+        }catch(err){
+            var timeCode = "Error!";
+        }
+        console.log(timeCode);
+        code.innerHTML = timeCode;
+    </script>
+</html>
