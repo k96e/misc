@@ -21,6 +21,9 @@ randomBin.py
 randomOTP.py
 >随机生成TOTP密钥及二维码
 
+BAChar2ID.py
+>将Blue Archive角色名转为资产文件所使用的id
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
