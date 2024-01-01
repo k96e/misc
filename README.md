@@ -38,3 +38,6 @@ NeoClock.py
 
 [page/otp.html](https://k96e.github.io/misc/page/otp.html)
 >TOTP密钥生成器
+
+[page/YearProgressBar.html](https://k96e.github.io/misc/page/YearProgressBar.html)
+>只是一个Year Progress Bar

@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <title>Year Progress Bar</title>
+        <style>
+            .year-progress-bar {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                height: 100vh;
+            }
+            progress {
+                width: 60%;
+                height: 30px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="year-progress-bar">
+            <progress value="50" max="100" id="progress"></progress>
+            <p style="text-align: center;margin: 0px;" id="value">Progress: 50%</p>
+        </div>
+    </body>
+    <script>
+        function getProgress(){
+            var year = new Date().getFullYear();
+            var firstDay = new Date(year, 0, 1).getTime();
+            var lastDay = new Date(year, 11, 31, 23, 59, 59, 999).getTime();
+            var now = new Date().getTime();
+            return (now - firstDay) / (lastDay - firstDay) * 100;
+        }
+        function updateProgress(){
+            var percentage = getProgress();
+            document.getElementById("progress").value = percentage;
+            document.getElementById("value").innerHTML = "Progress: " + percentage.toFixed(7) + "%";
+        }
+        updateProgress();
+        setInterval(updateProgress, 100);
+    </script>
+</html>
