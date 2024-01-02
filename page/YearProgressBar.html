@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Year Progress Bar</title>
+        <meta name="color-scheme" content="dark light">
         <style>
             .year-progress-bar {
                 display: flex;
@@ -9,16 +10,28 @@
                 flex-direction: column;
                 height: 100vh;
             }
+            #value {
+                font-size: 2em;
+                font-family: monospace;
+                font-weight: lighter;
+                margin-top: 2%;
+            }
             progress {
                 width: 60%;
                 height: 30px;
+            }
+            @media (prefers-color-scheme: dark) {
+                .year-progress-bar {
+                    background-color: #000;
+                }
+
             }
         </style>
     </head>
     <body>
         <div class="year-progress-bar">
             <progress value="50" max="100" id="progress"></progress>
-            <p style="text-align: center;margin: 0px;" id="value">Progress: 50%</p>
+            <p style="text-align: center;" id="value">Progress: 50%</p>
         </div>
     </body>
     <script>
