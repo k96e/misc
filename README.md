@@ -24,6 +24,9 @@ randomOTP.py
 BAChar2ID.py
 >将Blue Archive角色名转为资产文件所使用的id
 
+HFUT-WiFi.py
+>HFUT校园网自动登录，仅测试屯溪路校区
+
 NeoClock.py
 >[NeoClock](https://github.com/k96e/NeoClock)的无外部库依赖单文件版本
 
