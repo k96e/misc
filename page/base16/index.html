@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>未语翻译器！</title>
+    <meta charset="utf-8">
+    <script src="https://unpkg.com/sober/dist/sober.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+    <s-tab mode="fixed">
+        <s-tab-item selected="true">
+            <div slot="text">Text 2 Icon</div>
+        </s-tab-item>
+        <s-tab-item>
+            <div slot="text">Icon 2 Text</div>
+        </s-tab-item>
+    </s-tab>
+
+    <div id="tab1" class="tab" style="text-align: center;">
+        <h2>Text 2 Icon</h2>
+        <s-text-field label="请输入内容" id="textarea" style="width: 80%;">
+            <textarea id="input"></textarea>
+        </s-text-field>
+        <p style="width: 80%; text-align: left;margin: auto;margin-top: 10px;">结果：</p>
+        <table id="result" style="margin: auto;"></table>
+    </div>
+
+    <div id="tab2" class="tab" style="text-align: center;">
+        <h2>Icon 2 Text</h2>
+        <p style="width: 80%; text-align: left;margin: auto;margin-top: 10px;">请输入内容：</p>
+        <p style="width: 80%; margin: auto;margin-top: 10px; min-height: 48px; overflow-wrap: anywhere;" id="current"></p>
+        <div class="keypad">
+            <div class="icon icon-1 key">0</div>
+            <div class="icon icon-2 key">1</div>
+            <div class="icon icon-3 key">2</div>
+            <div class="icon icon-4 key">3</div>
+            <div class="icon icon-5 key">4</div>
+            <div class="icon icon-6 key">5</div>
+            <div class="icon icon-7 key">6</div>
+            <div class="icon icon-8 key">7</div>
+            <div class="icon icon-9 key">8</div>
+            <div class="icon icon-10 key">9</div>
+            <div class="icon icon-11 key">A</div>
+            <div class="icon icon-12 key">B</div>
+            <div class="icon icon-13 key">C</div>
+            <div class="icon icon-14 key">D</div>
+            <div class="icon icon-15 key">E</div>
+            <div class="icon icon-16 key">F</div>
+        </div>
+        <button id="clear">清空</button>
+        <button id="back">回退</button>
+        <p style="width: 80%; text-align: left;margin: auto;margin-top: 10px;">结果：</p>
+        <p style="width: 80%; text-align: left;margin: auto;margin-top: 10px;" id="out"></p>
+    </div>
+
+    <script>
+        document.querySelector('s-tab').addEventListener('change', function (e) {
+            const selected = document.querySelector('s-tab').selectedIndex;
+            if (selected === 0) {
+                document.getElementById('tab1').style.display = 'block';
+                document.getElementById('tab2').style.display = 'none';
+            } else {
+                document.getElementById('tab1').style.display = 'none';
+                document.getElementById('tab2').style.display = 'block';
+            }
+        });
+        function fillTable(data, colCount = 5) {
+            const table = document.getElementById('result');
+            const rowCount = Math.ceil(data.length / colCount);
+            table.innerHTML = '';
+            for (let i = 0; i < rowCount; i++) {
+                const row = table.insertRow();
+                for (let j = 0; j < colCount; j++) {
+                    row.insertCell();
+                }
+            }
+            let cellIndex = 0;
+            for (let i = 0; i < rowCount; i++) {
+                for (let j = 0; j < colCount; j++) {
+                    if (cellIndex < data.length) {
+                        table.rows[i].cells[j].innerHTML = data[cellIndex];
+                        cellIndex++;
+                    } else {
+                        return;
+                    }
+                }
+            }
+        }
+        function utf8ToHexArray(str) {
+            let utf8Bytes = new TextEncoder().encode(str);
+            let hexString = Array.from(utf8Bytes).map(byte => byte.toString(16).padStart(2, '0')).join('');
+            return Array.from(hexString);
+        }
+        function hexArrayToUtf8(strArray) {
+            let hexString = strArray.join('');
+            let bytes = [];
+            for (let i = 0; i < hexString.length; i += 2) {
+                bytes.push(parseInt(hexString.substr(i, 2), 16));
+            }
+            let decodedString = new TextDecoder().decode(new Uint8Array(bytes));
+            return decodedString;
+        }
+        function hexToDecimal(hex) {
+            hex = hex.toUpperCase();
+            if (!/^[0-9A-F]$/.test(hex)) {
+                throw new Error();
+            }
+            const decimal = parseInt(hex, 16) + 1;
+            return decimal;
+        }
+        function setCurrent() {
+            var data = '';
+            for(var i=0;i<hexArray.length;i++){
+                data+=`<div class="icon-scaled icon-scaled-${hexToDecimal(hexArray[i])}"></div>`
+            }
+            document.getElementById('current').innerHTML = data;
+        }
+        const input = document.getElementById('input');
+        input.addEventListener('input', function () {
+            const data = utf8ToHexArray(input.value);
+            var res = [];
+            for(var i=0;i<data.length;i++){
+                res.push(`<div class="icon icon-${hexToDecimal(data[i])} key"></div>`);
+            }
+            fillTable(res);
+        });
+        var hexArray = [];
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', () => {
+                hexArray.push(key.textContent);
+                //document.getElementById('current').textContent = hexArray.join('');
+                setCurrent();
+                document.getElementById('out').textContent = hexArrayToUtf8(hexArray);
+            });
+        });
+        document.getElementById('clear').addEventListener('click', () => {
+            hexArray = [];
+            //document.getElementById('current').textContent = '';
+            setCurrent();
+            document.getElementById('out').textContent = '';
+        });
+        document.getElementById('back').addEventListener('click', () => {
+            hexArray.pop();
+            //document.getElementById('current').textContent = hexArray.join('');
+            setCurrent();
+            document.getElementById('out').textContent = hexArrayToUtf8(hexArray);
+        });
+    </script>
+</body>
+
+</html>

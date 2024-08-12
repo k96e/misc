@@ -1,0 +1,134 @@
+#tab2 {
+    display: none;
+}
+
+#tab1 {
+    display: block;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td {
+    padding: 5px;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    grid-gap: 10px;
+    width: 260px;
+    margin: 20px auto;
+}
+
+.key {
+    font-size: 0;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    user-select: none;
+}
+
+.icon {
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+    background-image: url('imgs.png');
+    background-repeat: no-repeat;
+}
+
+/* 第一行 */
+.icon-1 {
+    background-position: 0 0;
+}
+
+.icon-2 {
+    background-position: -50px 0;
+}
+
+.icon-3 {
+    background-position: -100px 0;
+}
+
+.icon-4 {
+    background-position: -150px 0;
+}
+
+/* 第二行 */
+.icon-5 {
+    background-position: 0 -50px;
+}
+
+.icon-6 {
+    background-position: -50px -50px;
+}
+
+.icon-7 {
+    background-position: -100px -50px;
+}
+
+.icon-8 {
+    background-position: -150px -50px;
+}
+
+/* 第三行 */
+.icon-9 {
+    background-position: 0 -100px;
+}
+
+.icon-10 {
+    background-position: -50px -100px;
+}
+
+.icon-11 {
+    background-position: -100px -100px;
+}
+
+.icon-12 {
+    background-position: -150px -100px;
+}
+
+/* 第四行 */
+.icon-13 {
+    background-position: 0 -150px;
+}
+
+.icon-14 {
+    background-position: -50px -150px;
+}
+
+.icon-15 {
+    background-position: -100px -150px;
+}
+
+.icon-16 {
+    background-position: -150px -150px;
+}
+
+.icon-scaled {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-image: url('imgs.png');
+    background-repeat: no-repeat;
+    background-size: 80px 80px;
+}
+
+
+.icon-scaled-1 { background-position: 0 0; }
+.icon-scaled-2 { background-position: -20px 0; }
+.icon-scaled-3 { background-position: -40px 0; }
+.icon-scaled-4 { background-position: -60px 0; }
+.icon-scaled-5 { background-position: 0 -20px; }
+.icon-scaled-6 { background-position: -20px -20px; }
+.icon-scaled-7 { background-position: -40px -20px; }
+.icon-scaled-8 { background-position: -60px -20px; }
+.icon-scaled-9 { background-position: 0 -40px; }
+.icon-scaled-10 { background-position: -20px -40px; }
+.icon-scaled-11 { background-position: -40px -40px; }
+.icon-scaled-12 { background-position: -60px -40px; }
+.icon-scaled-13 { background-position: 0 -60px; }
+.icon-scaled-14 { background-position: -20px -60px; }
+.icon-scaled-15 { background-position: -40px -60px; }
+.icon-scaled-16 { background-position: -60px -60px; }
