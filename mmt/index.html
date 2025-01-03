@@ -13,6 +13,8 @@
           redirectUrl.searchParams.append(key, value);
         });
         window.location.href = redirectUrl.toString();
+      }else{
+        window.location.href = 'misonotalk://';
       }
     });
   </script>
