@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MisonoTalk</title>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.toString()) {
+        const redirectUrl = new URL('misonotalk://');
+        params.forEach((value, key) => {
+          redirectUrl.searchParams.append(key, value);
+        });
+        window.location.href = redirectUrl.toString();
+      }
+    });
+  </script>
+</head>
+<body>
+  Redirecting...
+</body>
+</html>

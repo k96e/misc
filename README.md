@@ -44,3 +44,6 @@ NeoClock.py
 
 [page/YearProgressBar.html](https://k96e.github.io/misc/page/YearProgressBar.html)
 >只是一个Year Progress Bar
+
+[mmt/index.html](https://k96e.github.io/misc/mmt)
+>[MisonoTalk](https://github.com/k96e/MisonoTalk)的AppLink跳转器
