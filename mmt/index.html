@@ -4,22 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MisonoTalk</title>
+  <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: #f5f5f5;
+    }
+
+    .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .input-group {
+            flex-direction: column;
+        }
+    }
+
+    .input-wrapper {
+        flex: 1;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+        outline: none;
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+    }
+
+    .checkbox-group {
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button {
+        background-color: #4299e1;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    button:hover {
+        background-color: #3182ce;
+    }
+
+    .result-area {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        min-height: 100px;
+        background-color: #fafafa;
+    }
+  </style>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
+      const builder = document.getElementById('builder');
+      const redirect = document.getElementById('redirect');
       if (params.toString()) {
+        redirect.style.display = 'block';
         const redirectUrl = new URL('misonotalk://');
         params.forEach((value, key) => {
           redirectUrl.searchParams.append(key, value);
         });
         window.location.href = redirectUrl.toString();
       }else{
-        window.location.href = 'misonotalk://';
+        builder.style.display = 'block';
+        const system = document.getElementById('system');
+        const user = document.getElementById('user');
+        const confirmCheck = document.getElementById('confirmCheck');
+        const result = document.getElementById('result');
+        const process = document.getElementById('process');
+        const goto = document.getElementById('goto');
+        process.addEventListener('click', () => {
+          var message = [];
+          const url = new URL('misonotalk://');
+          if (system.value) {
+            message.push({"type":3,"message":system.value});
+          }
+          if (user.value) {
+            message.push({"type":2,"message":user.value});
+          }
+          // base64 encode
+          var encoded = btoa(JSON.stringify(message));
+          url.searchParams.append('m', encoded);
+          console.log(JSON.stringify(message));
+          if (confirmCheck.checked) {
+            url.searchParams.append('confirm', 'true');
+          }
+          result.textContent = url.toString();
+        });
+        goto.addEventListener('click', () => {
+          window.location.href = result.textContent;
+        });
       }
     });
   </script>
 </head>
 <body>
-  Redirecting...
+  <div id="redirect" style="display: none;">
+    Redirecting...
+  </div>
+  <div class="container" id="builder" style="display: none;">
+    <div class="input-group">
+        <div class="input-wrapper">
+            <input type="text" placeholder="System Instruction" id="system">
+        </div>
+        <div class="input-wrapper">
+            <input type="text" placeholder="User message" id="user">
+        </div>
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="confirmCheck">
+        <label for="confirmCheck">自动开始</label>
+    </div>
+
+    <button id="process">确定</button>
+
+    <button id="goto">打开</button>
+
+    <div class="result-area" id="result">
+        misonotalk://
+    </div>
+  </div>
 </body>
 </html>
