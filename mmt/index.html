@@ -94,6 +94,8 @@
         border-radius: 6px;
         min-height: 100px;
         background-color: #fafafa;
+        word-break: break-all;
+        word-wrap: break-word;
     }
   </style>
   <script>
@@ -126,7 +128,7 @@
             message.push({"type":2,"message":user.value});
           }
           // base64 encode
-          var encoded = btoa(JSON.stringify(message));
+          var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(message))));
           url.searchParams.append('m', encoded);
           console.log(JSON.stringify(message));
           if (confirmCheck.checked) {
