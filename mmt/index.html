@@ -127,12 +127,31 @@
         word-break: break-all;
         word-wrap: break-word;
     }
+
+    #switch {
+        margin-bottom: 1.5rem;
+    }
   </style>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const builder = document.getElementById('builder');
       const redirect = document.getElementById('redirect');
+      const switchButton = document.getElementById('switch');
+      const msg = document.getElementById('msg');
+      const config = document.getElementById('config');
+      var isConfig = false;
+      switchButton.addEventListener('click', () => {
+        if (isConfig) {
+          msg.style.display = 'block';
+          config.style.display = 'none';
+          isConfig = false;
+        }else{
+          msg.style.display = 'none';
+          config.style.display = 'block';
+          isConfig = true;
+        }
+      });
       if (params.toString()) {
         redirect.style.display = 'block';
         const redirectUrl = new URL('misonotalk://');
@@ -148,23 +167,45 @@
         const result = document.getElementById('result');
         const process = document.getElementById('process');
         const goto = document.getElementById('goto');
+        const api_name = document.getElementById('api_name');
+        const base_url = document.getElementById('base_url');
+        const api_key = document.getElementById('api_key');
+        const model_name = document.getElementById('model_name');
         process.addEventListener('click', () => {
-          var message = [];
-          const url = new URL('misonotalk://');
-          if (system.value) {
-            message.push({"type":3,"message":system.value});
+          if (!isConfig) {
+            var message = [];
+            const url = new URL('misonotalk://');
+            if (system.value) {
+              message.push({"type":3,"message":system.value});
+            }
+            if (user.value) {
+              message.push({"type":2,"message":user.value});
+            }
+            // base64 encode
+            var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(message))));
+            url.searchParams.append('m', encoded);
+            console.log(JSON.stringify(message));
+            if (confirmCheck.checked) {
+              url.searchParams.append('confirm', 'true');
+            }
+            result.textContent = url.toString();
+          }else{
+            if (!api_name.value || !base_url.value || !api_key.value || !model_name.value) {
+              alert('请填写完整信息');
+              return;
+            }
+            var message = {};
+            const url = new URL('misonotalk://');
+            message.name = api_name.value;
+            message.baseUrl = base_url.value;
+            message.apiKey = api_key.value;
+            message.model = model_name.value;
+            // base64 encode
+            var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(message))));
+            url.searchParams.append('c', encoded);
+            console.log(JSON.stringify(message));
+            result.textContent = url.toString();
           }
-          if (user.value) {
-            message.push({"type":2,"message":user.value});
-          }
-          // base64 encode
-          var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(message))));
-          url.searchParams.append('m', encoded);
-          console.log(JSON.stringify(message));
-          if (confirmCheck.checked) {
-            url.searchParams.append('confirm', 'true');
-          }
-          result.textContent = url.toString();
         });
         goto.addEventListener('click', () => {
           window.location.href = result.textContent;
@@ -178,18 +219,42 @@
     Redirecting...
   </div>
   <div class="container" id="builder" style="display: none;">
-    <div class="input-group">
-        <div class="input-wrapper">
-            <input type="text" placeholder="System Instruction" id="system">
-        </div>
-        <div class="input-wrapper">
-            <input type="text" placeholder="User message" id="user">
-        </div>
+
+    <button id="switch">切换</button>
+
+    <div id="msg">
+      <div class="input-group">
+          <div class="input-wrapper">
+              <input type="text" placeholder="System Instruction" id="system">
+          </div>
+          <div class="input-wrapper">
+              <input type="text" placeholder="User message" id="user">
+          </div>
+      </div>
+      <div class="checkbox-group">
+          <input type="checkbox" id="confirmCheck">
+          <label for="confirmCheck">自动开始</label>
+      </div>
     </div>
 
-    <div class="checkbox-group">
-        <input type="checkbox" id="confirmCheck">
-        <label for="confirmCheck">自动开始</label>
+    <div id="config" style="display: none;">
+      <div class="input-group">
+          <div class="input-wrapper">
+              <input type="text" placeholder="api name" id="api_name">
+          </div>
+          <div class="input-wrapper">
+              <input type="text" placeholder="base url" id="base_url">
+          </div>
+      </div>
+
+      <div class="input-group">
+          <div class="input-wrapper">
+              <input type="text" placeholder="api key" id="api_key">
+          </div>
+          <div class="input-wrapper">
+              <input type="text" placeholder="model name" id="model_name">
+          </div>
+      </div>
     </div>
 
     <button id="process">确定</button>
