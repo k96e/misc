@@ -126,12 +126,24 @@
         background-color: var(--result-background);
         word-break: break-all;
         word-wrap: break-word;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    #qrcode {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
     }
 
     #switch {
         margin-bottom: 1.5rem;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     var mmtURL = "misonotalk://";
     document.addEventListener('DOMContentLoaded', () => {
@@ -174,6 +186,24 @@
         const base_url = document.getElementById('base_url');
         const api_key = document.getElementById('api_key');
         const model_name = document.getElementById('model_name');
+
+        // 创建QR码容器
+        const qrcodeDiv = document.createElement('div');
+        qrcodeDiv.id = 'qrcode';
+        result.appendChild(qrcodeDiv);
+        
+        // 创建文本显示区
+        const urlText = document.createElement('div');
+        urlText.id = 'urlText';
+        result.insertBefore(urlText, qrcodeDiv);
+        
+        let qrcode = new QRCode(qrcodeDiv, {
+          width: 256,
+          height: 256,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+        });
+
         process.addEventListener('click', () => {
           if (!isConfig) {
             var message = [];
@@ -191,7 +221,10 @@
             if (confirmCheck.checked) {
               url.searchParams.append('confirm', 'true');
             }
-            result.textContent = url.toString();
+            // 更新文本和二维码
+            urlText.textContent = url.toString();
+            qrcode.clear();
+            qrcode.makeCode(url.toString());
           }else{
             if (!api_name.value || !base_url.value || !api_key.value || !model_name.value) {
               alert('请填写完整信息');
@@ -207,7 +240,10 @@
             var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(message))));
             url.searchParams.append('c', encoded);
             console.log(JSON.stringify(message));
-            result.textContent = url.toString();
+            // 更新文本和二维码
+            urlText.textContent = url.toString();
+            qrcode.clear();
+            qrcode.makeCode(url.toString());
           }
         });
         document.getElementById('urlSwitch').addEventListener('click', () => {
@@ -275,9 +311,7 @@
 
     <button id="goto">打开</button>
 
-    <div class="result-area" id="result">
-        misonotalk://
-    </div>
+    <div class="result-area" id="result"></div>
   </div>
 </body>
 </html>
