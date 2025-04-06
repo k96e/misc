@@ -45,5 +45,8 @@ NeoClock.py
 [page/YearProgressBar.html](https://k96e.github.io/misc/page/YearProgressBar.html)
 >只是一个Year Progress Bar
 
+[page/color](https://k96e.github.io/misc/page/color)
+>颜色相似度匹配
+
 [mmt/index.html](https://k96e.github.io/misc/mmt)
 >[MisonoTalk](https://github.com/k96e/MisonoTalk)的AppLink跳转器
