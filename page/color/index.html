@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色匹配工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>颜色匹配工具</h1>
+        
+        <div class="input-section">
+            <label for="color-input">输入16进制颜色值:</label>
+            <div class="input-group">
+                <span>#</span>
+                <input type="text" id="color-input" placeholder="例如: FF5733" maxlength="6">
+                <button id="find-match">查找匹配</button>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="color-preview">
+                <div id="input-color" class="color-box"></div>
+                <div class="color-info">
+                    <h3>您的颜色</h3>
+                    <p id="input-hex">#------</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="results" class="results-section">
+            <h2>最匹配的颜色</h2>
+            <div id="matches-container" class="matches-container">
+                <!-- 结果将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

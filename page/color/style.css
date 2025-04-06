@@ -1,0 +1,158 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
+
+h2 {
+    margin: 20px 0;
+    color: #34495e;
+}
+
+.input-section {
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    margin-top: 8px;
+}
+
+.input-group span {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    font-size: 16px;
+}
+
+#color-input {
+    flex-grow: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-family: monospace;
+}
+
+#find-match {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#find-match:hover {
+    background-color: #2980b9;
+}
+
+.preview-section {
+    margin: 20px 0;
+}
+
+.color-preview {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.color-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+    border: 1px solid #ddd;
+}
+
+.color-info {
+    flex-grow: 1;
+}
+
+.color-info h3 {
+    margin-bottom: 5px;
+}
+
+.color-info p {
+    font-family: monospace;
+    font-size: 14px;
+    color: #666;
+}
+
+.results-section {
+    display: none;
+}
+
+.matches-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.match-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.match-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.match-color {
+    width: 60px;
+    height: 60px;
+    border-radius: 5px;
+    margin-right: 15px;
+    border: 1px solid #ddd;
+}
+
+.match-info h3 {
+    margin-bottom: 3px;
+    font-size: 16px;
+}
+
+.match-info p {
+    font-family: monospace;
+    margin-bottom: 3px;
+    color: #666;
+}
+
+.similarity {
+    font-size: 14px;
+    color: #888;
+}
