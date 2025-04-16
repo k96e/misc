@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地形图分幅编号与经纬度转换工具</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --secondary-dark: #27ae60;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+
+        header p {
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .map-system-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .toggle-container {
+            display: inline-flex;
+            background-color: var(--border-color);
+            border-radius: 30px;
+            overflow: hidden;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .toggle-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            position: relative;
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px; /* Adjusted margin */
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .coordinate-inputs {
+            display: flex;
+            gap: 20px; /* Increased gap between lon/lat groups */
+        }
+
+        .coordinate-inputs .input-group {
+            flex: 1;
+        }
+
+        /* Styles for DMS inputs */
+        .dms-inputs {
+            display: flex;
+            gap: 8px; /* Gap between deg, min, sec inputs */
+        }
+        .dms-inputs input {
+             flex: 1; /* Distribute space evenly */
+             min-width: 60px; /* Prevent inputs from becoming too narrow */
+             text-align: center; /* Center the number input */
+        }
+        /* Hide browser default number spinners for cleaner look (optional) */
+        .dms-inputs input[type=number]::-webkit-inner-spin-button,
+        .dms-inputs input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .dms-inputs input[type=number] {
+          -moz-appearance: textfield; /* Firefox */
+        }
+
+
+        button.convert-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button.convert-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .result-card {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-value {
+            white-space: pre-line;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+        }
+
+        .result-item h4 {
+            margin-bottom: 10px; /* Increased margin below title */
+            color: var(--text-color);
+        }
+
+        /* Style for the results list container */
+        #map-code-result {
+            padding: 10px;
+            background-color: rgba(52, 152, 219, 0.05); /* Lighter background */
+            border-radius: 4px;
+        }
+        /* Style for each result item in the list */
+        .scale-result-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border-color); /* Separator */
+            font-size: 15px;
+        }
+        .scale-result-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .scale-result-item strong {
+             display: inline-block;
+             width: 110px; /* Align scale names */
+             color: var(--primary-dark);
+        }
+         .scale-result-item span {
+             font-family: monospace;
+             color: var(--text-color);
+             word-break: break-all;
+         }
+
+
+        .map-preview {
+            height: 200px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-box {
+            position: absolute;
+            border: 2px solid var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* 响应式布局 */
+        @media (max-width: 768px) {
+            .coordinate-inputs {
+                flex-direction: column;
+                gap: 15px; /* Adjust gap for vertical stacking */
+            }
+
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+             /* Ensure DMS inputs still look okay on mobile */
+             .dms-inputs input {
+                 min-width: 50px; /* Slightly smaller min-width if needed */
+            }
+            .scale-result-item strong {
+                width: auto; /* Allow scale names to wrap on mobile */
+                margin-right: 5px;
+            }
+        }
+
+        /* 老图号特有的比例尺选择器 */
+        #old-scale-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>地形图分幅编号与经纬度转换工具</h1>
+        </header>
+
+        <div class="map-system-toggle">
+            <div class="toggle-container">
+                <button class="toggle-btn active" data-system="new">新图号</button>
+                <button class="toggle-btn" data-system="old">老图号</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="code-to-coord">图号 → 坐标</button>
+            <button class="tab" data-tab="coord-to-code">坐标 → 图号</button>
+        </div>
+
+        <div class="tab-content active" id="code-to-coord">
+            <!-- 图号 -> 坐标 Tab (Unchanged) -->
+            <div class="card">
+                <h3 class="card-title">输入地形图分幅编号</h3>
+                <div class="input-group">
+                    <label for="map-code">图号:</label>
+                    <input type="text" id="map-code" placeholder="请输入地形图分幅编号，如: J50E010001">
+                    <div class="error-message" id="map-code-error"></div>
+                </div>
+
+                <div class="input-group" id="old-scale-container">
+                    <label for="old-map-scale">比例尺 (老图号):</label>
+                    <select id="old-map-scale">
+                        <option value="LEVEL_1M">1:1,000,000</option>
+                        <option value="LEVEL_500K">1:500,000</option>
+                        <option value="LEVEL_250K">1:250,000</option>
+                        <option value="LEVEL_100K">1:100,000</option>
+                        <option value="LEVEL_50K">1:50,000</option>
+                        <option value="LEVEL_25K">1:25,000</option>
+                        <option value="LEVEL_10K">1:10,000</option>
+                        <option value="LEVEL_5K">1:5,000</option>
+                    </select>
+                </div>
+
+                <button class="convert-btn" id="code-to-coord-btn">
+                    <span class="loading" id="code-to-coord-loading"></span>
+                    转换
+                </button>
+            </div>
+
+            <div class="card result-card" id="code-to-coord-result">
+                <h3 class="card-title">转换结果</h3>
+                <div class="result-item">
+                    <h4>西南角坐标:</h4>
+                    <div class="result-value" id="sw-coords">经度: -- , 纬度: --</div>
+                </div>
+                <div class="result-item">
+                    <h4>东北角坐标:</h4>
+                    <div class="result-value" id="ne-coords">经度: -- , 纬度: --</div>
+                </div>
+                <div class="result-item">
+                    <h4>比例尺:</h4>
+                    <div class="result-value" id="detected-scale">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="coord-to-code">
+            <!-- 坐标 -> 图号 Tab (Modified) -->
+            <div class="card">
+                <h3 class="card-title">输入经纬度</h3>
+                <div class="coordinate-inputs">
+                    <div class="input-group">
+                        <label for="lon-deg">经度 (度 分 秒):</label>
+                         <div class="dms-inputs">
+                            <input type="number" id="lon-deg" placeholder="度" min="-180" max="180">
+                            <input type="number" id="lon-min" placeholder="分" min="0" max="59">
+                            <input type="number" id="lon-sec" placeholder="秒" min="0" max="59.999999" step="any">
+                        </div>
+                        <div class="error-message" id="longitude-error"></div>
+                    </div>
+                    <div class="input-group">
+                        <label for="lat-deg">纬度 (度 分 秒):</label>
+                         <div class="dms-inputs">
+                            <input type="number" id="lat-deg" placeholder="度" min="-90" max="90">
+                            <input type="number" id="lat-min" placeholder="分" min="0" max="59">
+                            <input type="number" id="lat-sec" placeholder="秒" min="0" max="59.999999" step="any">
+                        </div>
+                        <div class="error-message" id="latitude-error"></div>
+                    </div>
+                </div>
+                <!-- Removed Scale Selector -->
+                <button class="convert-btn" id="coord-to-code-btn">
+                    <span class="loading" id="coord-to-code-loading"></span>
+                    转换
+                </button>
+            </div>
+
+            <div class="card result-card" id="coord-to-code-result">
+                <h3 class="card-title">转换结果</h3>
+                <div class="result-item">
+                     <h4>对应图号 (各比例尺):</h4>
+                     <div id="map-code-result">
+                         <!-- Results will be populated here by JavaScript -->
+                         <p>请先输入坐标并点击转换按钮。</p>
+                     </div>
+                 </div>
+                 <!-- Removed map preview for this tab -->
+            </div>
+        </div>
+
+        <footer>
+            <p>@k96e</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        // 导入模块
+        import { Angle } from './angle.js';
+        import { Scale } from './scale.js';
+        import { OldStandard } from './oldStandard.js';
+        import { NewStandard } from './newStandard.js';
+
+        // 全局变量
+        let currentSystem = 'new'; // 'new' 或 'old'
+
+        // DOM 元素
+        const mapCodeInput = document.getElementById('map-code');
+        const mapCodeError = document.getElementById('map-code-error');
+        const oldScaleContainer = document.getElementById('old-scale-container');
+        const oldMapScale = document.getElementById('old-map-scale');
+        const codeToCoordResult = document.getElementById('code-to-coord-result');
+        const neCoords = document.getElementById('ne-coords');
+        const swCoords = document.getElementById('sw-coords');
+        const detectedScale = document.getElementById('detected-scale');
+        const codeMapBox = document.getElementById('code-map-box');
+
+        // DMS Input elements
+        const lonDegInput = document.getElementById('lon-deg');
+        const lonMinInput = document.getElementById('lon-min');
+        const lonSecInput = document.getElementById('lon-sec');
+        const latDegInput = document.getElementById('lat-deg');
+        const latMinInput = document.getElementById('lat-min');
+        const latSecInput = document.getElementById('lat-sec');
+
+        const longitudeError = document.getElementById('longitude-error');
+        const latitudeError = document.getElementById('latitude-error');
+        const coordToCodeResult = document.getElementById('coord-to-code-result');
+        const mapCodeResultContainer = document.getElementById('map-code-result');
+
+        // 加载指示器
+        const codeToCoordLoading = document.getElementById('code-to-coord-loading');
+        const coordToCodeLoading = document.getElementById('coord-to-code-loading');
+
+        // 系统切换
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSystem = btn.getAttribute('data-system');
+
+                // 根据当前系统和活动Tab显示或隐藏老图号比例尺选择器
+                const codeToCoordTabActive = document.getElementById('code-to-coord').classList.contains('active');
+                oldScaleContainer.style.display = (currentSystem === 'old' && codeToCoordTabActive) ? 'block' : 'none';
+                mapCodeInput.placeholder=currentSystem==='old'?"请输入地形图分幅编号，如: J-50-5-B":"请输入地形图分幅编号，如: J50E010001";
+                resetResults();
+            });
+        });
+
+        // 选项卡切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+
+                oldScaleContainer.style.display = (currentSystem === 'old' && tabId === 'code-to-coord') ? 'block' : 'none';
+
+                resetResults();
+            });
+        });
+
+
+        // 显示错误消息
+        function showError(element, message) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // 隐藏错误消息
+        function hideError(element) {
+            element.style.display = 'none';
+            element.textContent = ''; // Clear previous message
+        }
+
+        // 重置结果显示
+        function resetResults() {
+            codeToCoordResult.style.display = 'none';
+            coordToCodeResult.style.display = 'none';
+            hideError(mapCodeError);
+            hideError(longitudeError);
+            hideError(latitudeError);
+            // Clear previous results
+            neCoords.textContent = '经度: -- , 纬度: --';
+            swCoords.textContent = '经度: -- , 纬度: --';
+            detectedScale.textContent = '--';
+            mapCodeResultContainer.innerHTML = '<p>请先输入坐标并点击转换按钮。</p>'; // Reset results list
+        }
+
+        // 获取比例尺显示名称（如 1:50,000）
+        function getScaleDisplayName(scaleKey) {
+            const scaleMap = {
+                'LEVEL_1M': '1:1,000,000',
+                'LEVEL_500K': '1:500,000',
+                'LEVEL_250K': '1:250,000',
+                'LEVEL_100K': '1:100,000',
+                'LEVEL_50K': '1:50,000',
+                'LEVEL_25K': '1:25,000',
+                'LEVEL_10K': '1:10,000',
+                'LEVEL_5K': '1:5,000',
+                'LEVEL_2K': '1:2,000',
+                'LEVEL_1K': '1:1,000',
+                'LEVEL_500': '1:500'
+            };
+            return scaleMap[scaleKey] || scaleKey; // Fallback to key name
+        }
+
+        // 从新图号中尝试推断比例尺（基于字母代码）
+        function inferScaleFromNewMapNumber(mapNumber) {
+            if (mapNumber.length >= 4) {
+                const scaleCode = mapNumber.charAt(3);
+                for (const key in Scale) {
+                    if (Scale.hasOwnProperty(key) && Scale[key] && typeof Scale[key] === 'object' && Scale[key].hasOwnProperty('code')) {
+                        if (Scale[key].code === scaleCode) {
+                            return key;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+
+        // 注册事件处理程序 - 图号到坐标转换 (Unchanged logic)
+        document.getElementById('code-to-coord-btn').addEventListener('click', async () => {
+            resetResults();
+            const mapCode = mapCodeInput.value.trim().toUpperCase();
+
+            if (!mapCode) {
+                showError(mapCodeError, '请输入地形图分幅编号');
+                return;
+            }
+
+            codeToCoordLoading.style.display = 'inline-block';
+
+            try {
+                let converter;
+                let bounds;
+                let scaleInfo = null;
+                let scaleKey = null;
+
+                if (currentSystem === 'new') {
+                    converter = new NewStandard();
+                    bounds = converter.newstandard_to_latlon(mapCode);
+                    scaleKey = inferScaleFromNewMapNumber(mapCode);
+                    if (scaleKey) {
+                        scaleInfo = getScaleDisplayName(scaleKey);
+                    }
+                } else {
+                    scaleKey = oldMapScale.value;
+                    if (!Scale[scaleKey]) {
+                         throw new Error("无效的老图号比例尺选择");
+                    }
+                    converter = new OldStandard(Scale[scaleKey]);
+                    bounds = converter.oldstandard_to_latlon(mapCode);
+                    scaleInfo = getScaleDisplayName(scaleKey);
+                }
+
+                const [[sw_lon, sw_lat], [ne_lon, ne_lat]] = bounds;
+
+                neCoords.textContent = `经度: ${ne_lon.toString()} (${ne_lon.toDecimal().toFixed(6)}°)\r\n纬度: ${ne_lat.toString()} (${ne_lat.toDecimal().toFixed(6)}°)`;
+                swCoords.textContent = `经度: ${sw_lon.toString()} (${sw_lon.toDecimal().toFixed(6)}°)\r\n纬度: ${sw_lat.toString()} (${sw_lat.toDecimal().toFixed(6)}°)`;
+                detectedScale.textContent = scaleInfo || '无法推断 (请参考图号规则)';
+
+                codeToCoordResult.style.display = 'block';
+
+            } catch (error) {
+                showError(mapCodeError, `转换错误: ${error.message}`);
+                console.error("Code to Coord Error:", error);
+            } finally {
+                codeToCoordLoading.style.display = 'none';
+            }
+        });
+
+        // 注册事件处理程序 - 坐标到图号转换 (MODIFIED LOGIC)
+        document.getElementById('coord-to-code-btn').addEventListener('click', async () => {
+            resetResults();
+            // No scaleValue read here anymore
+
+            coordToCodeLoading.style.display = 'inline-block';
+            mapCodeResultContainer.innerHTML = ''; // Clear previous results immediately
+
+            let lon, lat;
+            let valid = true;
+
+            try {
+                // --- Coordinate Parsing and Validation (Same as before) ---
+                const lonDegStr = lonDegInput.value.trim();
+                const lonMinStr = lonMinInput.value.trim();
+                const lonSecStr = lonSecInput.value.trim();
+                const lonDeg = parseFloat(lonDegStr);
+                const lonMin = parseFloat(lonMinStr || '0');
+                const lonSec = parseFloat(lonSecStr || '0');
+
+                if (lonDegStr === '' || isNaN(lonDeg) || lonDeg < -180 || lonDeg > 180) { showError(longitudeError, '经度度数无效 (-180 to 180)'); valid = false; }
+                else if (isNaN(lonMin) || lonMin < 0 || lonMin >= 60) { showError(longitudeError, '经度分数无效 (0-59)'); valid = false; }
+                else if (isNaN(lonSec) || lonSec < 0 || lonSec >= 60) { showError(longitudeError, '经度秒数无效 [0, 60)'); valid = false; }
+                else { hideError(longitudeError); if (valid) lon = new Angle(lonDeg, lonMin, lonSec); }
+
+                const latDegStr = latDegInput.value.trim();
+                const latMinStr = latMinInput.value.trim();
+                const latSecStr = latSecInput.value.trim();
+                const latDeg = parseFloat(latDegStr);
+                const latMin = parseFloat(latMinStr || '0');
+                const latSec = parseFloat(latSecStr || '0');
+
+                if (latDegStr === '' || isNaN(latDeg) || latDeg < -90 || latDeg > 90) { showError(latitudeError, '纬度度数无效 (-90 to 90)'); valid = false; }
+                 else if (isNaN(latMin) || latMin < 0 || latMin >= 60) { showError(latitudeError, '纬度分数无效 (0-59)'); valid = false; }
+                 else if (isNaN(latSec) || latSec < 0 || latSec >= 60) { showError(latitudeError, '纬度秒数无效 [0, 60)'); valid = false; }
+                 else { hideError(latitudeError); if (valid) lat = new Angle(latDeg, latMin, latSec); }
+
+                if (!valid) { throw new Error("输入验证失败"); }
+
+                // --- Conversion Loop for All Scales ---
+                const allResults = [];
+                const scaleKeys = Object.keys(Scale);
+                const newScaleOnly = ['LEVEL_2K', 'LEVEL_1K', 'LEVEL_500']; // Scales not applicable to old standard
+
+                for (const scaleKey of scaleKeys) {
+                    // Skip scales not applicable to the current system
+                    if (currentSystem === 'old' && newScaleOnly.includes(scaleKey)) {
+                        continue;
+                    }
+
+                    const scaleObject = Scale[scaleKey];
+                    if (!scaleObject) continue; // Skip if scale definition is missing
+
+                    try {
+                         let converter;
+                         let mapNumber;
+
+                         if (currentSystem === 'new') {
+                             converter = new NewStandard(scaleObject);
+                             mapNumber = converter.latlon_to_newstandard(lon, lat);
+                         } else {
+                             converter = new OldStandard(scaleObject);
+                             mapNumber = converter.latlon_to_oldstandard(lon, lat);
+                         }
+                         allResults.push({
+                             scaleName: getScaleDisplayName(scaleKey),
+                             mapNumber: mapNumber
+                         });
+                    } catch (conversionError) {
+                         // Log error for specific scale but continue with others
+                         console.error(`Error converting for scale ${scaleKey}:`, conversionError);
+                         allResults.push({
+                             scaleName: getScaleDisplayName(scaleKey),
+                             mapNumber: `错误: ${conversionError.message}`
+                         });
+                    }
+                } // End of scale loop
+
+                // --- Display All Results ---
+                if (allResults.length === 0) {
+                     mapCodeResultContainer.innerHTML = '<p>没有找到适用于当前系统的图号。</p>';
+                } else {
+                    allResults.forEach(result => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'scale-result-item'; // Add class for styling
+                        // Use innerHTML carefully, ensure mapNumber doesn't contain malicious script
+                        // In this case, mapNumber is generated by our code, so it should be safe.
+                        itemDiv.innerHTML = `<strong>${result.scaleName}:</strong> <span>${result.mapNumber}</span>`;
+                        mapCodeResultContainer.appendChild(itemDiv);
+                    });
+                }
+
+                // Show the results card
+                coordToCodeResult.style.display = 'block';
+                // No map preview drawing here anymore
+
+            } catch (error) {
+                // Handle coordinate validation errors or other general errors
+                if (error.message !== "输入验证失败") {
+                     showError(longitudeError, `转换错误: ${error.message}`);
+                     showError(latitudeError, ` `); // Clear lat error if lon shows general
+                }
+                mapCodeResultContainer.innerHTML = `<p style="color: red;">处理时发生错误: ${error.message}</p>`;
+                coordToCodeResult.style.display = 'block'; // Show card even on error to display message
+                console.error("Coord to Code Error:", error);
+            } finally {
+                coordToCodeLoading.style.display = 'none';
+            }
+        });
+
+        // 初始化函数
+        function initialize() {
+            // Set default for old scale selector (only relevant for code->coord)
+            oldMapScale.value = 'LEVEL_50K';
+
+            // Initialize old scale selector visibility (initially hidden)
+            oldScaleContainer.style.display = 'none';
+
+            // Reset results display areas
+            resetResults();
+
+            // No need to update or set default for coordMapScale anymore
+        }
+
+        // 初始化
+        initialize();
+    </script>
+</body>
+</html>
