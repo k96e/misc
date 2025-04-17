@@ -90,6 +90,7 @@ export class NewStandard {
      * @throws {Error} If the code format is invalid.
      */
     newstandard_to_latlon(new_standard_number) {
+        new_standard_number = new_standard_number.toUpperCase();
         if (!new_standard_number || new_standard_number.length < 3) {
             throw new Error(`Invalid new standard code format: ${new_standard_number}`);
         }

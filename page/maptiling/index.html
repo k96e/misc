@@ -129,13 +129,29 @@
             margin-bottom: 20px;
         }
 
-        .card-title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: var(--primary-dark);
+        /* --- MODIFIED: Wrapper for title and inline button --- */
+        .card-title-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
+            margin-bottom: 15px; /* Space below title area */
         }
+
+        /* --- MODIFIED: Card title style adjusted --- */
+        .card-title {
+            font-size: 18px;
+            color: var(--primary-dark);
+            /* Removed border/padding/margin as they are on the wrapper now */
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            flex-grow: 1; /* Allow title to take available space */
+            margin-right: 10px; /* Space between title and button */
+        }
+        /* --- END MODIFIED --- */
+
 
         .input-group {
             margin-bottom: 15px;
@@ -184,7 +200,7 @@
           -moz-appearance: textfield; /* Firefox */
         }
 
-
+        /* Primary Convert Button */
         button.convert-btn {
             background-color: var(--primary-color);
             color: white;
@@ -197,12 +213,62 @@
             transition: background-color 0.3s;
             display: block;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px; /* Spacing above convert button */
         }
-
         button.convert-btn:hover {
             background-color: var(--primary-dark);
         }
+
+        /* --- ADDED/MODIFIED: Styles for the inline location button --- */
+        button.get-location-inline-btn {
+            background: none;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px; /* Smaller font size */
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            display: inline-flex; /* Use flex for icon/text/spinner alignment */
+            align-items: center;
+            white-space: nowrap; /* Prevent wrapping */
+            flex-shrink: 0; /* Prevent shrinking if title is long */
+            /* Removed width, margin-top */
+        }
+        button.get-location-inline-btn .button-icon {
+            width: 1em; /* Size relative to font size */
+            height: 1em;
+            margin-right: 5px;
+            vertical-align: text-bottom; /* Align icon better */
+        }
+        button.get-location-inline-btn:hover {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+        button.get-location-inline-btn:disabled {
+            background-color: #f0f0f0;
+            border-color: #dcdcdc;
+            color: #aaaaaa;
+            cursor: not-allowed;
+        }
+        /* Adjust spinner for inline button */
+        #location-loading {
+            width: 14px; /* Smaller spinner */
+            height: 14px;
+            border-width: 2px;
+            border-top-color: var(--secondary-color); /* Initial color */
+            margin-left: 5px; /* Space between text and spinner */
+        }
+         button.get-location-inline-btn:hover #location-loading {
+             border-top-color: white; /* Spinner color on hover */
+         }
+         button.get-location-inline-btn:disabled #location-loading {
+             border-top-color: #aaaaaa; /* Spinner color when disabled */
+         }
+        /* --- END ADDED/MODIFIED --- */
+
 
         .result-card {
             margin-top: 20px;
@@ -277,6 +343,18 @@
             margin-top: 5px;
             display: none;
         }
+        /* --- MODIFIED: Style for geolocation status message --- */
+        #geolocation-status {
+            font-size: 14px;
+            /* Removed margin-top, now handled by title wrapper margin-bottom */
+            margin-bottom: 15px; /* Space below status, above inputs */
+            min-height: 1.5em; /* Reserve space */
+        }
+        #geolocation-status.success { color: var(--secondary-dark); }
+        #geolocation-status.error { color: #e74c3c; }
+        #geolocation-status.info { color: #666; }
+        /* --- END MODIFIED --- */
+
 
         .loading {
             display: inline-block;
@@ -286,8 +364,9 @@
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
+            /* margin-right: 10px; REMOVED - handled by inline button */
             display: none;
+            vertical-align: middle; /* Align spinner with text */
         }
 
         @keyframes spin {
@@ -326,6 +405,19 @@
                 width: auto; /* Allow scale names to wrap on mobile */
                 margin-right: 5px;
             }
+            /* Adjust title wrapper for smaller screens */
+            .card-title-wrapper {
+                /* Allow wrapping if needed, although button is small */
+                /* flex-wrap: wrap; */
+                /* align-items: flex-start; */
+            }
+            .card-title {
+                font-size: 17px; /* Slightly smaller title */
+            }
+            button.get-location-inline-btn {
+                font-size: 13px; /* Slightly smaller button */
+                padding: 3px 6px;
+            }
         }
 
         /* 老图号特有的比例尺选择器 */
@@ -354,36 +446,36 @@
 
         <div class="tab-content active" id="code-to-coord">
             <!-- 图号 -> 坐标 Tab (Unchanged) -->
-            <div class="card">
-                <h3 class="card-title">输入地形图分幅编号</h3>
-                <div class="input-group">
-                    <label for="map-code">图号:</label>
-                    <input type="text" id="map-code" placeholder="请输入地形图分幅编号，如: J50E010001">
-                    <div class="error-message" id="map-code-error"></div>
-                </div>
-
-                <div class="input-group" id="old-scale-container">
-                    <label for="old-map-scale">比例尺 (老图号):</label>
-                    <select id="old-map-scale">
-                        <option value="LEVEL_1M">1:1,000,000</option>
-                        <option value="LEVEL_500K">1:500,000</option>
-                        <option value="LEVEL_250K">1:250,000</option>
-                        <option value="LEVEL_100K">1:100,000</option>
-                        <option value="LEVEL_50K">1:50,000</option>
-                        <option value="LEVEL_25K">1:25,000</option>
-                        <option value="LEVEL_10K">1:10,000</option>
-                        <option value="LEVEL_5K">1:5,000</option>
-                    </select>
-                </div>
-
-                <button class="convert-btn" id="code-to-coord-btn">
-                    <span class="loading" id="code-to-coord-loading"></span>
-                    转换
-                </button>
-            </div>
-
+             <div class="card">
+                 <h3 class="card-title">输入地形图分幅编号</h3>
+                 <h3 class="card-title-wrapper"> </h3>
+                 <div class="input-group">
+                     <label for="map-code">图号:</label>
+                     <input type="text" id="map-code" placeholder="请输入地形图分幅编号，如: J50E010001">
+                     <div class="error-message" id="map-code-error"></div>
+                 </div>
+                 <div class="input-group" id="old-scale-container">
+                     <label for="old-map-scale">比例尺 (老图号):</label>
+                     <select id="old-map-scale">
+                         <option value="LEVEL_1M">1:1,000,000</option>
+                         <option value="LEVEL_500K">1:500,000</option>
+                         <option value="LEVEL_250K">1:250,000</option>
+                         <option value="LEVEL_100K">1:100,000</option>
+                         <option value="LEVEL_50K">1:50,000</option>
+                         <option value="LEVEL_25K">1:25,000</option>
+                         <option value="LEVEL_10K">1:10,000</option>
+                         <option value="LEVEL_5K">1:5,000</option>
+                     </select>
+                 </div>
+                 <button class="convert-btn" id="code-to-coord-btn">
+                     <span class="loading" id="code-to-coord-loading"></span>
+                     转换
+                 </button>
+             </div>
             <div class="card result-card" id="code-to-coord-result">
-                <h3 class="card-title">转换结果</h3>
+                 <h3 class="card-title-wrapper"> <!-- Use wrapper even here for consistency if needed, or just title -->
+                    <h3 class="card-title">转换结果</h3>
+                 </h3>
                 <div class="result-item">
                     <h4>西南角坐标:</h4>
                     <div class="result-value" id="sw-coords">经度: -- , 纬度: --</div>
@@ -400,9 +492,24 @@
         </div>
 
         <div class="tab-content" id="coord-to-code">
-            <!-- 坐标 -> 图号 Tab (Modified) -->
+            <!-- 坐标 -> 图号 Tab (Modified HTML Structure) -->
             <div class="card">
-                <h3 class="card-title">输入经纬度</h3>
+                <!-- MODIFIED: Title wrapper contains title and button -->
+                <div class="card-title-wrapper">
+                    <h3 class="card-title">输入经纬度</h3>
+                    <button class="get-location-inline-btn" id="get-location-btn" title="获取当前浏览器位置">
+                        <!-- SVG Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-geo-alt-fill button-icon" viewBox="0 0 16 16">
+                          <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                        </svg>
+                        <span class="button-text">获取</span> <!-- Shorter text -->
+                        <span class="loading" id="location-loading"></span>
+                    </button>
+                </div>
+                <!-- MODIFIED: Status div moved below wrapper -->
+                <div id="geolocation-status" style="display: none;"></div>
+
+                <!-- Input fields remain the same -->
                 <div class="coordinate-inputs">
                     <div class="input-group">
                         <label for="lon-deg">经度 (度 分 秒):</label>
@@ -423,24 +530,26 @@
                         <div class="error-message" id="latitude-error"></div>
                     </div>
                 </div>
-                <!-- Removed Scale Selector -->
+
+                <!-- Convert button remains the same -->
                 <button class="convert-btn" id="coord-to-code-btn">
                     <span class="loading" id="coord-to-code-loading"></span>
                     转换
                 </button>
             </div>
 
-            <div class="card result-card" id="coord-to-code-result">
-                <h3 class="card-title">转换结果</h3>
-                <div class="result-item">
-                     <h4>对应图号 (各比例尺):</h4>
-                     <div id="map-code-result">
-                         <!-- Results will be populated here by JavaScript -->
-                         <p>请先输入坐标并点击转换按钮。</p>
-                     </div>
-                 </div>
-                 <!-- Removed map preview for this tab -->
-            </div>
+             <div class="card result-card" id="coord-to-code-result">
+                 <h3 class="card-title-wrapper"> <!-- Use wrapper even here for consistency if needed, or just title -->
+                    <h3 class="card-title">转换结果</h3>
+                 </h3>
+                 <div class="result-item">
+                      <h4>对应图号 (各比例尺):</h4>
+                      <div id="map-code-result">
+                          <!-- Results will be populated here by JavaScript -->
+                          <p>请先输入坐标并点击转换按钮。</p>
+                      </div>
+                  </div>
+             </div>
         </div>
 
         <footer>
@@ -486,6 +595,12 @@
         const codeToCoordLoading = document.getElementById('code-to-coord-loading');
         const coordToCodeLoading = document.getElementById('coord-to-code-loading');
 
+        // --- Geolocation Elements ---
+        const getLocationBtn = document.getElementById('get-location-btn');
+        const locationLoading = document.getElementById('location-loading');
+        const geolocationStatus = document.getElementById('geolocation-status');
+        // --- END Geolocation Elements ---
+
         // 系统切换
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -493,11 +608,12 @@
                 btn.classList.add('active');
                 currentSystem = btn.getAttribute('data-system');
 
-                // 根据当前系统和活动Tab显示或隐藏老图号比例尺选择器
                 const codeToCoordTabActive = document.getElementById('code-to-coord').classList.contains('active');
                 oldScaleContainer.style.display = (currentSystem === 'old' && codeToCoordTabActive) ? 'block' : 'none';
                 mapCodeInput.placeholder=currentSystem==='old'?"请输入地形图分幅编号，如: J-50-5-B":"请输入地形图分幅编号，如: J50E010001";
+                mapCodeInput.value = ''; // Clear input on system change
                 resetResults();
+                resetGeolocationStatus(); // Reset geo status on system change
             });
         });
 
@@ -514,6 +630,7 @@
                 oldScaleContainer.style.display = (currentSystem === 'old' && tabId === 'code-to-coord') ? 'block' : 'none';
 
                 resetResults();
+                resetGeolocationStatus(); // Reset geo status on tab change
             });
         });
 
@@ -543,6 +660,41 @@
             detectedScale.textContent = '--';
             mapCodeResultContainer.innerHTML = '<p>请先输入坐标并点击转换按钮。</p>'; // Reset results list
         }
+
+        // --- Geolocation Functions ---
+        function resetGeolocationStatus() {
+             geolocationStatus.textContent = '';
+             geolocationStatus.className = ''; // Clear status classes
+             geolocationStatus.style.display = 'none'; // Hide status message
+        }
+
+        function setGeolocationStatus(message, type = 'info') {
+            geolocationStatus.textContent = message;
+            geolocationStatus.className = type; // 'info', 'success', 'error'
+            geolocationStatus.style.display = 'block'; // Show status message
+        }
+
+        function decimalToDMS(decimal, isLongitude) {
+            const degrees = Math.trunc(decimal);
+            const minutesFloat = Math.abs(decimal - degrees) * 60;
+            const minutes = Math.trunc(minutesFloat);
+            const seconds = ((minutesFloat - minutes) * 60); //.toFixed(6); // Keep precision
+
+            // Ensure degrees are within valid range after potential rounding issues
+            let finalDegrees = degrees;
+            if (isLongitude && (finalDegrees > 180 || finalDegrees < -180)) finalDegrees = degrees % 180;
+            if (!isLongitude && (finalDegrees > 90 || finalDegrees < -90)) finalDegrees = degrees % 90;
+
+
+            return {
+                deg: finalDegrees,
+                min: minutes,
+                // Use step="any" in HTML, so allow full precision here
+                sec: parseFloat(seconds.toFixed(7)) // Limit display precision slightly to avoid long trails
+            };
+        }
+        // --- END Geolocation Functions ---
+
 
         // 获取比例尺显示名称（如 1:50,000）
         function getScaleDisplayName(scaleKey) {
@@ -581,7 +733,8 @@
         // 注册事件处理程序 - 图号到坐标转换 (Unchanged logic)
         document.getElementById('code-to-coord-btn').addEventListener('click', async () => {
             resetResults();
-            const mapCode = mapCodeInput.value.trim().toUpperCase();
+            resetGeolocationStatus(); // Also reset geo status here if user switches tab+action
+            const mapCode = mapCodeInput.value.trim();
 
             if (!mapCode) {
                 showError(mapCodeError, '请输入地形图分幅编号');
@@ -629,11 +782,10 @@
             }
         });
 
-        // 注册事件处理程序 - 坐标到图号转换 (MODIFIED LOGIC)
+        // 注册事件处理程序 - 坐标到图号转换 (Unchanged core logic)
         document.getElementById('coord-to-code-btn').addEventListener('click', async () => {
             resetResults();
-            // No scaleValue read here anymore
-
+            resetGeolocationStatus(); // Clear geo status on convert click
             coordToCodeLoading.style.display = 'inline-block';
             mapCodeResultContainer.innerHTML = ''; // Clear previous results immediately
 
@@ -643,11 +795,11 @@
             try {
                 // --- Coordinate Parsing and Validation (Same as before) ---
                 const lonDegStr = lonDegInput.value.trim();
-                const lonMinStr = lonMinInput.value.trim();
-                const lonSecStr = lonSecInput.value.trim();
+                const lonMinStr = lonMinInput.value.trim() || '0'; // Default to 0 if empty
+                const lonSecStr = lonSecInput.value.trim() || '0'; // Default to 0 if empty
                 const lonDeg = parseFloat(lonDegStr);
-                const lonMin = parseFloat(lonMinStr || '0');
-                const lonSec = parseFloat(lonSecStr || '0');
+                const lonMin = parseFloat(lonMinStr);
+                const lonSec = parseFloat(lonSecStr);
 
                 if (lonDegStr === '' || isNaN(lonDeg) || lonDeg < -180 || lonDeg > 180) { showError(longitudeError, '经度度数无效 (-180 to 180)'); valid = false; }
                 else if (isNaN(lonMin) || lonMin < 0 || lonMin >= 60) { showError(longitudeError, '经度分数无效 (0-59)'); valid = false; }
@@ -655,11 +807,11 @@
                 else { hideError(longitudeError); if (valid) lon = new Angle(lonDeg, lonMin, lonSec); }
 
                 const latDegStr = latDegInput.value.trim();
-                const latMinStr = latMinInput.value.trim();
-                const latSecStr = latSecInput.value.trim();
+                const latMinStr = latMinInput.value.trim() || '0'; // Default to 0 if empty
+                const latSecStr = latSecInput.value.trim() || '0'; // Default to 0 if empty
                 const latDeg = parseFloat(latDegStr);
-                const latMin = parseFloat(latMinStr || '0');
-                const latSec = parseFloat(latSecStr || '0');
+                const latMin = parseFloat(latMinStr);
+                const latSec = parseFloat(latSecStr);
 
                 if (latDegStr === '' || isNaN(latDeg) || latDeg < -90 || latDeg > 90) { showError(latitudeError, '纬度度数无效 (-90 to 90)'); valid = false; }
                  else if (isNaN(latMin) || latMin < 0 || latMin >= 60) { showError(latitudeError, '纬度分数无效 (0-59)'); valid = false; }
@@ -668,7 +820,7 @@
 
                 if (!valid) { throw new Error("输入验证失败"); }
 
-                // --- Conversion Loop for All Scales ---
+                // --- Conversion Loop for All Scales (Unchanged) ---
                 const allResults = [];
                 const scaleKeys = Object.keys(Scale);
                 const newScaleOnly = ['LEVEL_2K', 'LEVEL_1K', 'LEVEL_500']; // Scales not applicable to old standard
@@ -702,20 +854,19 @@
                          console.error(`Error converting for scale ${scaleKey}:`, conversionError);
                          allResults.push({
                              scaleName: getScaleDisplayName(scaleKey),
-                             mapNumber: `错误: ${conversionError.message}`
+                             mapNumber: `<span style="color: #e74c3c;">错误: ${conversionError.message}</span>` // Display error inline
                          });
                     }
                 } // End of scale loop
 
-                // --- Display All Results ---
+                // --- Display All Results (Unchanged) ---
                 if (allResults.length === 0) {
                      mapCodeResultContainer.innerHTML = '<p>没有找到适用于当前系统的图号。</p>';
                 } else {
                     allResults.forEach(result => {
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'scale-result-item'; // Add class for styling
-                        // Use innerHTML carefully, ensure mapNumber doesn't contain malicious script
-                        // In this case, mapNumber is generated by our code, so it should be safe.
+                        // Use innerHTML carefully, allow error span to render
                         itemDiv.innerHTML = `<strong>${result.scaleName}:</strong> <span>${result.mapNumber}</span>`;
                         mapCodeResultContainer.appendChild(itemDiv);
                     });
@@ -723,21 +874,89 @@
 
                 // Show the results card
                 coordToCodeResult.style.display = 'block';
-                // No map preview drawing here anymore
 
             } catch (error) {
                 // Handle coordinate validation errors or other general errors
                 if (error.message !== "输入验证失败") {
-                     showError(longitudeError, `转换错误: ${error.message}`);
-                     showError(latitudeError, ` `); // Clear lat error if lon shows general
+                     // Show general error if validation didn't already show specific ones
+                     if(longitudeError.style.display !== 'block' && latitudeError.style.display !== 'block'){
+                        showError(longitudeError, `转换错误: ${error.message}`);
+                     }
                 }
-                mapCodeResultContainer.innerHTML = `<p style="color: red;">处理时发生错误: ${error.message}</p>`;
+                mapCodeResultContainer.innerHTML = `<p style="color: red;">处理时发生错误。</p>`;
                 coordToCodeResult.style.display = 'block'; // Show card even on error to display message
                 console.error("Coord to Code Error:", error);
             } finally {
                 coordToCodeLoading.style.display = 'none';
             }
         });
+
+
+        // --- Geolocation Event Listener (Unchanged core logic) ---
+        getLocationBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                setGeolocationStatus('浏览器不支持地理定位。', 'error');
+                return;
+            }
+
+            locationLoading.style.display = 'inline-block';
+            getLocationBtn.disabled = true;
+            setGeolocationStatus('正在获取位置...', 'info');
+            // Clear previous validation errors
+            hideError(longitudeError);
+            hideError(latitudeError);
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+
+                    const latDMS = decimalToDMS(latitude, false);
+                    const lonDMS = decimalToDMS(longitude, true);
+
+                    latDegInput.value = latDMS.deg;
+                    latMinInput.value = latDMS.min;
+                    latSecInput.value = latDMS.sec;
+
+                    lonDegInput.value = lonDMS.deg;
+                    lonMinInput.value = lonDMS.min;
+                    lonSecInput.value = lonDMS.sec;
+
+                    locationLoading.style.display = 'none';
+                    getLocationBtn.disabled = false;
+                    setGeolocationStatus(`位置已获取 (纬: ${latitude.toFixed(6)}°, 经: ${longitude.toFixed(6)}°)`, 'success');
+                },
+                (error) => {
+                    locationLoading.style.display = 'none';
+                    getLocationBtn.disabled = false;
+                    let message = '无法获取位置: ';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            message += "用户拒绝了地理定位请求。";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message += "位置信息不可用。";
+                            break;
+                        case error.TIMEOUT:
+                            message += "获取用户位置的请求超时。";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            message += "发生未知错误。";
+                            break;
+                    }
+                    setGeolocationStatus(message, 'error');
+                    console.error("Geolocation Error:", error);
+                },
+                {
+                    // Optional: Add options here if needed
+                    // enableHighAccuracy: true,
+                    // timeout: 10000, // 10 seconds
+                    // maximumAge: 0 // Force fresh location
+                }
+            );
+        });
+         // --- END Geolocation ---
+
 
         // 初始化函数
         function initialize() {
@@ -749,8 +968,8 @@
 
             // Reset results display areas
             resetResults();
+            resetGeolocationStatus(); // Initial reset
 
-            // No need to update or set default for coordMapScale anymore
         }
 
         // 初始化
