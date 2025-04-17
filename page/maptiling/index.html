@@ -752,7 +752,7 @@
                 if (currentSystem === 'new') {
                     converter = new NewStandard();
                     bounds = converter.newstandard_to_latlon(mapCode);
-                    scaleKey = inferScaleFromNewMapNumber(mapCode);
+                    scaleKey = inferScaleFromNewMapNumber(mapCode.toUpperCase());
                     if (scaleKey) {
                         scaleInfo = getScaleDisplayName(scaleKey);
                     }
