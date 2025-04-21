@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map View</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="leaflet.ChineseTmsProviders.js"></script>
+    <script src="leaflet.mapCorrection.min.js"></script>
+    <script>
+        // Helper function to parse URL parameters
+        function getURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            const sw = params.get('sw') ? params.get('sw').split(',').map(Number) : null;
+            const ne = params.get('ne') ? params.get('ne').split(',').map(Number) : null;
+            return { sw, ne };
+        }
+
+        // Initialize the map
+        const map = L.map('map').setView([0, 0], 2); // Default center and zoom
+
+        
+        /*L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);*/
+
+        L.tileLayer.chinaProvider('GaoDe.Normal.Map', {
+            maxZoom: 18
+        }).addTo(map);
+
+        // Get rectangle coordinates from URL
+        const { sw, ne } = getURLParams();
+
+        // If valid coordinates are provided, draw the rectangle and fit bounds
+        if (sw && ne && sw.length === 2 && ne.length === 2) {
+            const bounds = [sw, ne];
+            L.rectangle(bounds, { color: 'blue', weight: 2 }).addTo(map);
+            map.fitBounds(bounds); // Zoom and center the map to fit the rectangle
+        } else {
+            console.error('Invalid or missing parameters. Ensure "sw" and "ne" are provided in the format "sw=lon,lat&ne=lon,lat".');
+        }
+    </script>
+</body>
+</html>
