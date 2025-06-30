@@ -42,8 +42,14 @@
     </style>
 </head>
 <body>
-    <button class="launch-button" onclick="window.location.href='qlauncher://open'">
+    <button class="launch-button">
         启动应用
     </button>
 </body>
+<script>
+    document.querySelector('.launch-button').addEventListener('click', function() {
+        window.location.href = 'qlauncher://open';
+        window.close();
+    });
+</script>
 </html>
