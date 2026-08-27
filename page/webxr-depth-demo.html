@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebXR 深度感知 · Quest 3 演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --abyss:#04141A;
+    --shelf:#0A2731;
+    --edge:#17414E;
+    --ink:#E4F3F1;
+    --mute:#79A0A6;
+    --t0:#30123B; --t1:#28BBEC; --t2:#A2FC3C; --t3:#FB8022; --t4:#7A0403;
+    --ruler: linear-gradient(180deg,var(--t0) 0%,var(--t1) 28%,var(--t2) 55%,var(--t3) 78%,var(--t4) 100%);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--abyss);
+    color:var(--ink);
+    font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:14px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:56px 24px 96px 0;display:grid;grid-template-columns:78px 1fr;gap:0 28px}
+
+  /* 签名元素:测距标尺。刻度对应 Quest 3 Depth API 的实际有效距离 */
+  .ruler{position:relative;border-right:1px solid var(--edge)}
+  .ruler .band{position:sticky;top:56px;height:calc(100vh - 140px);width:10px;margin-left:auto;margin-right:14px;background:var(--ruler);border-radius:1px}
+  .ruler .ticks{position:sticky;top:56px;height:calc(100vh - 140px);margin-top:calc(-1 * (100vh - 140px));display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:30px}
+  .ruler .ticks span{font-size:10px;letter-spacing:.14em;color:var(--mute)}
+
+  header h1{font-family:"Syne",system-ui,sans-serif;font-weight:800;font-size:clamp(30px,6vw,46px);line-height:1.02;margin:0 0 14px;letter-spacing:-.02em}
+  header h1 em{font-style:normal;background:var(--ruler);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin:0 0 20px}
+  p{max-width:56ch;color:#BBD6D6}
+  a{color:var(--t1)}
+
+  section{margin-top:44px}
+  h2{font-family:"Syne",sans-serif;font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--edge)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 10px}
+  button{
+    font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.06em;
+    color:var(--abyss);background:var(--t2);border:0;border-radius:2px;
+    padding:14px 20px;cursor:pointer;transition:transform .12s ease,background .12s ease;
+  }
+  button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--edge)}
+  button:hover:not(:disabled){transform:translateY(-2px)}
+  button.ghost:hover:not(:disabled){background:var(--shelf)}
+  button:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  button:focus-visible{outline:2px solid var(--t1);outline-offset:3px}
+
+  .status{margin-top:18px;padding:14px 16px;background:var(--shelf);border-left:3px solid var(--edge);font-size:12.5px;color:#C9E3E1;white-space:pre-wrap}
+  .status.ok{border-left-color:var(--t2)}
+  .status.bad{border-left-color:var(--t3)}
+
+  dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0;font-size:12.5px}
+  dt{color:var(--mute);letter-spacing:.04em}
+  dd{margin:0;color:var(--ink)}
+  ul{padding-left:1.1em;color:#BBD6D6;max-width:56ch}
+  li{margin-bottom:6px}
+  code{background:var(--shelf);padding:1px 5px;border-radius:2px;font-size:12.5px;color:var(--t2)}
+  footer{margin-top:56px;font-size:11.5px;color:var(--mute)}
+  @media (max-width:640px){
+    .wrap{grid-template-columns:1fr;padding:40px 20px 72px}
+    .ruler{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ruler" aria-hidden="true">
+    <div class="band"></div>
+    <div class="ticks">
+      <span>0 m</span><span>1 m</span><span>2 m</span><span>3 m</span><span>4 m</span><span>5 m</span>
+    </div>
+  </div>
+
+  <main>
+    <header>
+      <p class="eyebrow">WebXR Depth Sensing Module · Quest 3 / 3S</p>
+      <h1>把房间<br><em>量成一张图</em></h1>
+      <p>这个页面用原生 WebGL2 直接调用 <code>depth-sensing</code> 模块:实时深度可视化、虚实遮挡、以及暂停/恢复深度传感。左边的色带就是演示里用的深度色标,刻度对应 Quest 3 深度约 5 米的有效范围。</p>
+    </header>
+
+    <div class="actions">
+      <button id="btn-gpu" disabled>GPU 模式(纹理)</button>
+      <button id="btn-cpu" class="ghost" disabled>CPU 模式(可测距)</button>
+    </div>
+    <div class="status" id="status">正在检测设备能力…</div>
+
+    <section>
+      <h2>进入头显后的操作</h2>
+      <dl>
+        <dt>扳机 Trigger</dt><dd>放置一个方块(有落点时贴在真实表面上)</dd>
+        <dt>A / X</dt><dd>切换显示模式:深度图 + 遮挡 → 仅遮挡 → 仅深度图 → 关闭</dd>
+        <dt>B / Y</dt><dd>暂停 / 恢复深度传感(<code>pauseDepthSensing()</code>)</dd>
+        <dt>侧握 Grip</dt><dd>清空已放置的方块</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>两种模式的区别</h2>
+      <ul>
+        <li><strong>GPU 模式</strong>用 <code>XRWebGLBinding.getDepthInformation()</code> 拿到一张不透明纹理,直接喂给片元着色器。零拷贝,做遮挡最合适。Quest 上纹理可能是 <code>TEXTURE_2D_ARRAY</code>(双眼一张),demo 会按 <code>textureType</code> 自动切换 shader。</li>
+        <li><strong>CPU 模式</strong>用 <code>XRFrame.getDepthInformation()</code> 拿到 ArrayBuffer,demo 自己上传成纹理,并额外调用 <code>getDepthInMeters(0.5, 0.5)</code> 显示视野中心的实际距离(米)。</li>
+        <li>两种模式都会打印协商结果:<code>depthUsage</code> / <code>depthDataFormat</code> / <code>depthType</code>,以及每帧的 <code>rawValueToMeters</code> 和缓冲区分辨率。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>部署</h2>
+      <p>WebXR 要求安全上下文。把这个文件放到 HTTPS 服务器上,或本机跑 <code>npx serve</code> 后在 Quest 浏览器里通过局域网 IP 访问 —— 后者需要在 <code>chrome://flags</code> 把该来源加入 <code>unsafely-treat-insecure-origin-as-secure</code>。</p>
+    </section>
+
+    <footer>规范:W3C WebXR Depth Sensing Module(Working Draft)。深度数据是环境信息,浏览器会请求授权,也可能主动降低分辨率或精度。</footer>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   WebXR Depth Sensing 演示 — 单文件,原生 WebGL2
+   ========================================================================= */
+
+const $ = (s) => document.querySelector(s);
+const statusEl = $('#status');
+function setStatus(text, kind) {
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+/* ---------------------------- 小型矩阵库 ---------------------------- */
+function mat4Identity(o = new Float32Array(16)) {
+  o.fill(0); o[0] = o[5] = o[10] = o[15] = 1; return o;
+}
+function mat4Mul(a, b, o = new Float32Array(16)) { // o = a * b (列主序)
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    let s = 0;
+    for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+    o[c * 4 + r] = s;
+  }
+  return o;
+}
+function mat4Translate(x, y, z, o = new Float32Array(16)) {
+  mat4Identity(o); o[12] = x; o[13] = y; o[14] = z; return o;
+}
+function mat4Scale(s, o = new Float32Array(16)) {
+  mat4Identity(o); o[0] = o[5] = o[10] = s; return o;
+}
+
+/* ---------------------------- 几何数据 ---------------------------- */
+function cubeGeometry(h = 0.5) {
+  const f = [ // 每面: 4 顶点 + 法线
+    [[-h,-h, h],[ h,-h, h],[ h, h, h],[-h, h, h],[0,0,1]],
+    [[ h,-h,-h],[-h,-h,-h],[-h, h,-h],[ h, h,-h],[0,0,-1]],
+    [[-h, h, h],[ h, h, h],[ h, h,-h],[-h, h,-h],[0,1,0]],
+    [[-h,-h,-h],[ h,-h,-h],[ h,-h, h],[-h,-h, h],[0,-1,0]],
+    [[ h,-h, h],[ h,-h,-h],[ h, h,-h],[ h, h, h],[1,0,0]],
+    [[-h,-h,-h],[-h,-h, h],[-h, h, h],[-h, h,-h],[-1,0,0]],
+  ];
+  const v = [];
+  for (const [a, b, c, d, n] of f) {
+    for (const p of [a, b, c, a, c, d]) v.push(p[0], p[1], p[2], n[0], n[1], n[2]);
+  }
+  return new Float32Array(v);
+}
+
+function ringGeometry(inner = 0.045, outer = 0.062, seg = 48) {
+  const v = [];
+  for (let i = 0; i < seg; i++) {
+    const a0 = (i / seg) * Math.PI * 2, a1 = ((i + 1) / seg) * Math.PI * 2;
+    const p = (r, a) => [Math.cos(a) * r, 0, Math.sin(a) * r];
+    const q = [p(inner, a0), p(outer, a0), p(outer, a1), p(inner, a1)];
+    for (const t of [q[0], q[1], q[2], q[0], q[2], q[3]]) v.push(t[0], t[1], t[2], 0, 1, 0);
+  }
+  return new Float32Array(v);
+}
+
+/* ---------------------------- Shader 构造 ---------------------------- */
+// 深度采样函数按「数据格式 × 纹理类型」生成,规避 GLSL 无法宏拼接类型的问题
+function depthSamplerGLSL(format, isArray) {
+  const arr = isArray;
+  let s = '';
+  if (format === 'unsigned-short') {
+    s += arr ? 'uniform highp usampler2DArray uDepth;\n' : 'uniform highp usampler2D uDepth;\n';
+  } else {
+    s += arr ? 'uniform highp sampler2DArray uDepth;\n' : 'uniform highp sampler2D uDepth;\n';
+  }
+  s += 'uniform float uDepthLayer;\n';
+  s += 'uniform mat4 uUvTransform;\n';       // normDepthBufferFromNormView
+  s += 'uniform float uRawValueToMeters;\n';
+  s += 'float depthMeters(vec2 viewUv){\n';
+  s += '  vec2 uv = (uUvTransform * vec4(viewUv, 0.0, 1.0)).xy;\n';
+  s += '  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0;\n';
+  if (format === 'luminance-alpha') {
+    // 16 位无符号整数被拆进 luminance 与 alpha 两个 8 位通道
+    s += arr ? '  vec2 packedDepth = texture(uDepth, vec3(uv, uDepthLayer)).ra;\n'
+             : '  vec2 packedDepth = texture(uDepth, uv).ra;\n';
+    s += '  return dot(packedDepth, vec2(255.0, 256.0 * 255.0)) * uRawValueToMeters;\n';
+  } else if (format === 'float32') {
+    s += arr ? '  float raw = texture(uDepth, vec3(uv, uDepthLayer)).r;\n'
+             : '  float raw = texture(uDepth, uv).r;\n';
+    s += '  return raw * uRawValueToMeters;\n';
+  } else {
+    s += arr ? '  uint raw = texture(uDepth, vec3(uv, uDepthLayer)).r;\n'
+             : '  uint raw = texture(uDepth, uv).r;\n';
+    s += '  return float(raw) * uRawValueToMeters;\n';
+  }
+  s += '}\n';
+  return s;
+}
+
+const TURBO_GLSL = `
+vec3 turbo(float t){
+  t = clamp(t, 0.0, 1.0);
+  vec3 c0 = vec3(0.11408901, 0.06288341, 0.22483372);
+  vec3 c1 = vec3(6.71641950, 3.18228675, 7.57158159);
+  vec3 c2 = vec3(-66.0940236, -4.92798270, -10.09439368);
+  vec3 c3 = vec3(228.76607915, 25.04986700, -91.54105330);
+  vec3 c4 = vec3(-334.83515658, -69.31749713, 288.58588506);
+  vec3 c5 = vec3(218.76372184, 67.52150568, -305.20457722);
+  vec3 c6 = vec3(-52.88903478, -21.54527365, 110.51746477);
+  vec3 v = c5 + t * c6;
+  v = c4 + t * v; v = c3 + t * v; v = c2 + t * v; v = c1 + t * v; v = c0 + t * v;
+  return clamp(v, 0.0, 1.0);
+}`;
+
+const VS_SOLID = `#version 300 es
+in vec3 aPos;
+in vec3 aNormal;
+uniform mat4 uProj, uView, uModel;
+out vec3 vNormal;
+out float vViewDepth;
+void main(){
+  vec4 world = uModel * vec4(aPos, 1.0);
+  vec4 viewPos = uView * world;
+  vNormal = mat3(uModel) * aNormal;
+  vViewDepth = -viewPos.z;   // positive view-space distance from the camera plane
+  gl_Position = uProj * viewPos;
+}`;
+
+function fsSolid(format, isArray) {
+  return `#version 300 es
+precision highp float;
+precision highp int;
+${depthSamplerGLSL(format, isArray)}
+uniform vec4 uViewport;   // x, y, w, h
+uniform vec3 uColor;
+uniform float uOcclusion;
+uniform float uUnlit;
+uniform float uAlpha;
+in vec3 vNormal;
+in float vViewDepth;
+out vec4 fragColor;
+void main(){
+  vec2 viewUv = vec2((gl_FragCoord.x - uViewport.x) / uViewport.z,
+                     1.0 - (gl_FragCoord.y - uViewport.y) / uViewport.w);
+  if (uOcclusion > 0.5) {
+    float real = depthMeters(viewUv);
+    // 0 means invalid depth for that texel; 2 cm tolerance absorbs sensor noise
+    if (real > 0.0 && real < vViewDepth - 0.02) discard;
+  }
+  float light = 1.0;
+  if (uUnlit < 0.5) {
+    vec3 n = normalize(vNormal);
+    light = 0.35 + 0.65 * max(dot(n, normalize(vec3(0.4, 0.9, 0.35))), 0.0);
+  }
+  fragColor = vec4(uColor * light, uAlpha);
+}`;
+}
+
+const VS_FULLSCREEN = `#version 300 es
+in vec2 aPos;
+out vec2 vViewUv;
+void main(){
+  // normalized view coordinates: origin top-left, y grows downward
+  vViewUv = vec2(aPos.x * 0.5 + 0.5, 0.5 - aPos.y * 0.5);
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
+
+function fsDepthViz(format, isArray) {
+  return `#version 300 es
+precision highp float;
+precision highp int;
+${depthSamplerGLSL(format, isArray)}
+${TURBO_GLSL}
+uniform float uRange;
+uniform float uAlpha;
+in vec2 vViewUv;
+out vec4 fragColor;
+void main(){
+  float d = depthMeters(vViewUv);
+  if (d <= 0.0) { fragColor = vec4(0.02, 0.05, 0.06, uAlpha * 0.55); return; }
+  vec3 color = turbo(d / uRange);
+  // contour line every 0.5 m
+  float band = fract(d * 2.0);
+  color = mix(color, vec3(1.0), smoothstep(0.05, 0.0, band) * 0.45);
+  fragColor = vec4(color, uAlpha);
+}`;
+}
+
+const VS_PANEL = `#version 300 es
+in vec3 aPos;
+in vec2 aUv;
+uniform mat4 uProj, uView, uModel;
+out vec2 vUv;
+void main(){
+  vUv = aUv;
+  gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
+}`;
+
+const FS_PANEL = `#version 300 es
+precision mediump float;
+uniform sampler2D uTex;
+in vec2 vUv;
+out vec4 fragColor;
+void main(){ fragColor = texture(uTex, vUv); }`;
+
+/* ---------------------------- GL 辅助 ---------------------------- */
+function compile(gl, type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    throw new Error('Shader 编译失败: ' + gl.getShaderInfoLog(sh) + '\n' + src);
+  }
+  return sh;
+}
+function link(gl, vsSrc, fsSrc, attribs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compile(gl, gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, compile(gl, gl.FRAGMENT_SHADER, fsSrc));
+  attribs.forEach((name, i) => gl.bindAttribLocation(p, i, name));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    throw new Error('Program 链接失败: ' + gl.getProgramInfoLog(p));
+  }
+  const u = new Proxy({}, {
+    get(cache, name) {
+      if (!(name in cache)) cache[name] = gl.getUniformLocation(p, name);
+      return cache[name];
+    }
+  });
+  return { program: p, u };
+}
+
+/* ---------------------------- 应用状态 ---------------------------- */
+const app = {
+  gl: null, session: null, refSpace: null, viewerSpace: null,
+  glBinding: null, hitTestSource: null, hitPose: null,
+  depthEnabled: false, usage: null, format: 'luminance-alpha', depthType: null,
+  cpuTexture: null, programCache: new Map(), dummyCache: new Map(),
+  buffers: {}, panel: null,
+  objects: [], mode: 0, depthPaused: false,
+  stats: { fps: 0, w: 0, h: 0, raw: 0, center: NaN, textureType: '-', hasDepth: false },
+  prevButtons: new Map(), lastT: 0, frameCount: 0, fpsT: 0,
+};
+
+const MODES = [
+  { name: 'DEPTH + OCCLUSION', viz: true,  occl: true  },
+  { name: 'OCCLUSION',         viz: false, occl: true  },
+  { name: 'DEPTH MAP',         viz: true,  occl: false },
+  { name: 'PASSTHROUGH',       viz: false, occl: false },
+];
+const DEPTH_RANGE = 5.0;   // 色标上限,匹配 Quest 3 Depth API 的有效距离
+
+/* ---------------------------- 启动 ---------------------------- */
+(async function init() {
+  if (!navigator.xr) {
+    setStatus('这个浏览器没有 navigator.xr。请在 Quest 浏览器或支持 WebXR 的环境中打开。', 'bad');
+    return;
+  }
+  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!supported) {
+    setStatus('设备不支持 immersive-ar 会话。Quest 3 / 3S 请确认已开启彩色透视。', 'bad');
+    return;
+  }
+  setStatus('设备支持 immersive-ar。选择一种深度使用方式开始。', 'ok');
+  $('#btn-gpu').disabled = false;
+  $('#btn-cpu').disabled = false;
+  $('#btn-gpu').addEventListener('click', () => startSession('gpu-optimized'));
+  $('#btn-cpu').addEventListener('click', () => startSession('cpu-optimized'));
+})();
+
+async function startSession(preferredUsage) {
+  const depthSensing = {
+    usagePreference: [preferredUsage],
+    dataFormatPreference: ['luminance-alpha', 'float32'],
+    depthTypeRequest: ['smooth', 'raw'],
+    matchDepthView: true,
+  };
+  const init = {
+    requiredFeatures: ['local-floor'],
+    optionalFeatures: ['depth-sensing', 'hit-test', 'anchors'],
+    depthSensing,
+  };
+
+  let session;
+  try {
+    session = await navigator.xr.requestSession('immersive-ar', init);
+  } catch (err) {
+    setStatus('会话创建失败:' + err.message, 'bad');
+    return;
+  }
+
+  app.session = session;
+  app.depthEnabled = (session.enabledFeatures || []).includes('depth-sensing');
+
+  if (app.depthEnabled) {
+    try {
+      app.usage = session.depthUsage;
+      app.format = session.depthDataFormat;
+      app.depthType = ('depthType' in session) ? session.depthType : null;
+    } catch (e) { /* 某些实现属性可能缺失 */ }
+  }
+
+  const lines = [
+    'depth-sensing: ' + (app.depthEnabled ? '已启用' : '未获得(将只显示放置的方块)'),
+    'depthUsage: ' + (app.usage || '-'),
+    'depthDataFormat: ' + (app.format || '-'),
+    'depthType: ' + (app.depthType || 'null(实现未区分)'),
+    'hit-test: ' + ((session.enabledFeatures || []).includes('hit-test') ? '已启用' : '未获得'),
+  ];
+  setStatus(lines.join('\n'), app.depthEnabled ? 'ok' : 'bad');
+
+  await setupGL(session);
+
+  app.refSpace = await session.requestReferenceSpace('local-floor');
+  try {
+    app.viewerSpace = await session.requestReferenceSpace('viewer');
+    app.hitTestSource = await session.requestHitTestSource({ space: app.viewerSpace });
+  } catch (e) { app.hitTestSource = null; }
+
+  session.addEventListener('end', onSessionEnd);
+  session.addEventListener('select', onSelect);
+  session.addEventListener('squeeze', () => { app.objects.length = 0; });
+  session.requestAnimationFrame(onXRFrame);
+}
+
+function onSessionEnd() {
+  app.session = null;
+  app.objects.length = 0;
+  app.programCache.clear();
+  app.dummyCache.clear();
+  setStatus('会话已结束。可以再次进入。', 'ok');
+}
+
+async function setupGL(session) {
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl2', { xrCompatible: true, alpha: true, antialias: true });
+  if (!gl) throw new Error('需要 WebGL2');
+  app.gl = gl;
+  await gl.makeXRCompatible();
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+  try { app.glBinding = new XRWebGLBinding(session, gl); } catch (e) { app.glBinding = null; }
+
+  // 顶点缓冲
+  const mk = (data) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); return b; };
+  const cube = cubeGeometry(0.5);
+  const ring = ringGeometry();
+  app.buffers.cube = { buf: mk(cube), count: cube.length / 6 };
+  app.buffers.ring = { buf: mk(ring), count: ring.length / 6 };
+  app.buffers.quad = { buf: mk(new Float32Array([-1,-1, 1,-1, 1,1, -1,-1, 1,1, -1,1])), count: 6 };
+  const pw = 0.30, ph = 0.15;
+  app.buffers.panel = {
+    buf: mk(new Float32Array([
+      -pw,-ph,0, 0,1,   pw,-ph,0, 1,1,   pw,ph,0, 1,0,
+      -pw,-ph,0, 0,1,   pw, ph,0, 1,0,  -pw,ph,0, 0,0,
+    ])), count: 6
+  };
+
+  app.panelProgram = link(gl, VS_PANEL, FS_PANEL, ['aPos', 'aUv']);
+  setupPanelTexture(gl);
+}
+
+/* ---------------------------- 按需编译 shader ---------------------------- */
+function getPrograms(isArray) {
+  const key = app.format + '|' + (isArray ? 'array' : '2d');
+  if (!app.programCache.has(key)) {
+    const gl = app.gl;
+    app.programCache.set(key, {
+      solid: link(gl, VS_SOLID, fsSolid(app.format, isArray), ['aPos', 'aNormal']),
+      viz: link(gl, VS_FULLSCREEN, fsDepthViz(app.format, isArray), ['aPos']),
+    });
+  }
+  return app.programCache.get(key);
+}
+
+// 采样器必须绑定到合法纹理,即使当前帧没有深度数据
+function getDummyTexture(isArray) {
+  const key = app.format + '|' + (isArray ? 'array' : '2d');
+  if (!app.dummyCache.has(key)) {
+    const gl = app.gl;
+    let entry = null;
+    try {
+      const target = isArray ? gl.TEXTURE_2D_ARRAY : gl.TEXTURE_2D;
+      const tex = gl.createTexture();
+      gl.bindTexture(target, tex);
+      const cfg = textureConfig(gl, app.format);
+      const zeros = new cfg.ArrayType(cfg.channels);
+      if (isArray) gl.texImage3D(target, 0, cfg.internal, 1, 1, 1, 0, cfg.format, cfg.type, zeros);
+      else gl.texImage2D(target, 0, cfg.internal, 1, 1, 0, cfg.format, cfg.type, zeros);
+      gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      entry = { tex, target };
+    } catch (e) { entry = null; }
+    app.dummyCache.set(key, entry);
+  }
+  return app.dummyCache.get(key);
+}
+
+function textureConfig(gl, format) {
+  if (format === 'float32')
+    return { internal: gl.R32F, format: gl.RED, type: gl.FLOAT, ArrayType: Float32Array, channels: 1 };
+  if (format === 'unsigned-short')
+    return { internal: gl.R16UI, format: gl.RED_INTEGER, type: gl.UNSIGNED_SHORT, ArrayType: Uint16Array, channels: 1 };
+  return { internal: gl.LUMINANCE_ALPHA, format: gl.LUMINANCE_ALPHA, type: gl.UNSIGNED_BYTE, ArrayType: Uint8Array, channels: 2 };
+}
+
+/* ---------------------------- 深度数据获取 ---------------------------- */
+// 统一返回 { texture, target, layer, uvMatrix, rawValueToMeters, width, height, textureType }
+function acquireDepth(frame, view) {
+  if (!app.depthEnabled) return null;
+  const gl = app.gl;
+  try {
+    if (app.usage === 'gpu-optimized') {
+      const info = app.glBinding.getDepthInformation(view);
+      if (!info) return null;
+      const isArray = info.textureType === 'texture-array';
+      return {
+        texture: info.texture,
+        target: isArray ? gl.TEXTURE_2D_ARRAY : gl.TEXTURE_2D,
+        isArray,
+        layer: isArray ? (info.imageIndex || 0) : 0,
+        uvMatrix: info.normDepthBufferFromNormView.matrix,
+        rawValueToMeters: info.rawValueToMeters,
+        width: info.width, height: info.height,
+        textureType: info.textureType || 'texture',
+        center: NaN,
+      };
+    }
+    // CPU 路径:自己把 ArrayBuffer 传成纹理
+    const info = frame.getDepthInformation(view);
+    if (!info) return null;
+    const cfg = textureConfig(gl, app.format);
+    if (!app.cpuTexture) {
+      app.cpuTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, app.cpuTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, app.cpuTexture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, cfg.internal, info.width, info.height, 0,
+                  cfg.format, cfg.type, new cfg.ArrayType(info.data));
+    let center = NaN;
+    try { center = info.getDepthInMeters(0.5, 0.5); } catch (e) {}
+    return {
+      texture: app.cpuTexture, target: gl.TEXTURE_2D, isArray: false, layer: 0,
+      uvMatrix: info.normDepthBufferFromNormView.matrix,
+      rawValueToMeters: info.rawValueToMeters,
+      width: info.width, height: info.height,
+      textureType: 'cpu upload', center,
+    };
+  } catch (e) {
+    return null;   // 深度被暂停或该帧无数据
+  }
+}
+
+function bindDepthUniforms(gl, prog, depth, isArray) {
+  gl.activeTexture(gl.TEXTURE0);
+  if (depth) {
+    gl.bindTexture(depth.target, depth.texture);
+    gl.uniformMatrix4fv(prog.u.uUvTransform, false, depth.uvMatrix);
+    gl.uniform1f(prog.u.uRawValueToMeters, depth.rawValueToMeters);
+    gl.uniform1f(prog.u.uDepthLayer, depth.layer);
+  } else {
+    const d = getDummyTexture(isArray);
+    if (d) gl.bindTexture(d.target, d.tex);
+    gl.uniformMatrix4fv(prog.u.uUvTransform, false, mat4Identity());
+    gl.uniform1f(prog.u.uRawValueToMeters, 0.001);
+    gl.uniform1f(prog.u.uDepthLayer, 0);
+  }
+  gl.uniform1i(prog.u.uDepth, 0);
+}
+
+/* ---------------------------- 交互 ---------------------------- */
+function onSelect(event) {
+  // XRInputSourceEvent 自带一个仍处于 active 状态的 frame
+  const frame = event.frame;
+  if (!frame) return;
+  let matrix = null;
+  if (app.hitPose) {
+    matrix = mat4Mul(app.hitPose.transform.matrix, mat4Translate(0, 0.05, 0));
+  } else {
+    const pose = frame.getPose(event.inputSource.targetRaySpace, app.refSpace);
+    if (!pose) return;
+    matrix = mat4Mul(pose.transform.matrix, mat4Translate(0, 0, -0.6));
+  }
+  const model = mat4Mul(matrix, mat4Scale(0.1));
+  const palette = [[0.16, 0.73, 0.93], [0.64, 0.99, 0.24], [0.98, 0.50, 0.13], [0.85, 0.31, 0.72]];
+  app.objects.push({ model, color: palette[app.objects.length % palette.length] });
+  if (app.objects.length > 40) app.objects.shift();
+}
+
+function pollButtons(frame) {
+  for (const src of app.session.inputSources) {
+    const gp = src.gamepad;
+    if (!gp) continue;
+    const key = src.handedness;
+    const prev = app.prevButtons.get(key) || [];
+    const now = gp.buttons.map(b => b.pressed);
+    // 索引 4 = A/X,索引 5 = B/Y
+    if (now[4] && !prev[4]) app.mode = (app.mode + 1) % MODES.length;
+    if (now[5] && !prev[5]) toggleDepthPause();
+    app.prevButtons.set(key, now);
+  }
+}
+
+function toggleDepthPause() {
+  const s = app.session;
+  if (!s || typeof s.pauseDepthSensing !== 'function') return;
+  try {
+    if (app.depthPaused) { s.resumeDepthSensing(); app.depthPaused = false; }
+    else { s.pauseDepthSensing(); app.depthPaused = true; }
+  } catch (e) {}
+}
+
+/* ---------------------------- 信息面板(canvas 纹理) ---------------------------- */
+function setupPanelTexture(gl) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024; canvas.height = 512;
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  app.panel = { canvas, ctx: canvas.getContext('2d'), tex, lastDraw: 0 };
+}
+
+function drawPanel(now) {
+  const p = app.panel;
+  if (now - p.lastDraw < 200) return;
+  p.lastDraw = now;
+  const c = p.ctx, W = p.canvas.width, H = p.canvas.height;
+  const s = app.stats;
+
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = 'rgba(4, 20, 26, 0.86)';
+  c.fillRect(0, 0, W, H);
+  c.strokeStyle = '#17414E'; c.lineWidth = 4; c.strokeRect(2, 2, W - 4, H - 4);
+
+  c.fillStyle = '#A2FC3C';
+  c.font = '600 34px "IBM Plex Mono", monospace';
+  c.fillText('WEBXR DEPTH SENSING', 34, 60);
+  c.fillStyle = '#79A0A6';
+  c.font = '400 22px "IBM Plex Mono", monospace';
+  c.fillText(MODES[app.mode].name + (app.depthPaused ? '   [DEPTH PAUSED]' : ''), 34, 96);
+
+  const rows = [
+    ['USAGE', app.usage || 'not granted'],
+    ['FORMAT', app.format || '-'],
+    ['TYPE', app.depthType || 'null'],
+    ['TEXTURE', s.textureType],
+    ['BUFFER', s.hasDepth ? s.w + ' x ' + s.h : 'no data this frame'],
+    ['RAW->M', s.hasDepth ? s.raw.toExponential(3) : '-'],
+    ['CENTER', isFinite(s.center) ? s.center.toFixed(3) + ' m' : 'cpu mode only'],
+    ['CUBES', String(app.objects.length)],
+    ['FPS', String(s.fps)],
+  ];
+  c.font = '500 26px "IBM Plex Mono", monospace';
+  rows.forEach((r, i) => {
+    const y = 150 + i * 34;
+    c.fillStyle = '#79A0A6'; c.fillText(r[0], 34, y);
+    c.fillStyle = '#E4F3F1'; c.fillText(r[1], 230, y);
+  });
+
+  // 色标图例
+  const gx = 640, gy = 150, gw = 340, gh = 26;
+  const grad = c.createLinearGradient(gx, 0, gx + gw, 0);
+  const stops = ['#30123B', '#28BBEC', '#A2FC3C', '#FB8022', '#7A0403'];
+  stops.forEach((col, i) => grad.addColorStop(i / (stops.length - 1), col));
+  c.fillStyle = grad; c.fillRect(gx, gy, gw, gh);
+  c.fillStyle = '#79A0A6'; c.font = '400 20px "IBM Plex Mono", monospace';
+  c.fillText('0 m', gx, gy + 52);
+  c.fillText(DEPTH_RANGE.toFixed(0) + ' m', gx + gw - 44, gy + 52);
+
+  c.fillStyle = '#79A0A6'; c.font = '400 21px "IBM Plex Mono", monospace';
+  c.fillText('TRIGGER place    A/X mode    B/Y pause depth    GRIP clear', 34, H - 40);
+
+  const gl = app.gl;
+  gl.bindTexture(gl.TEXTURE_2D, p.tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, p.canvas);
+}
+
+/* ---------------------------- 渲染循环 ---------------------------- */
+function onXRFrame(now, frame) {
+  const session = frame.session;
+  session.requestAnimationFrame(onXRFrame);
+  app.lastFrame = frame;
+
+  const gl = app.gl;
+  const layer = session.renderState.baseLayer;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clearDepth(1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  app.frameCount++;
+  if (now - app.fpsT > 500) {
+    app.stats.fps = Math.round(app.frameCount * 1000 / (now - app.fpsT));
+    app.frameCount = 0; app.fpsT = now;
+  }
+
+  pollButtons(frame);
+
+  const pose = frame.getViewerPose(app.refSpace);
+  if (!pose) return;
+
+  // 命中测试落点(用于把方块贴到真实表面)
+  app.hitPose = null;
+  if (app.hitTestSource) {
+    const hits = frame.getHitTestResults(app.hitTestSource);
+    if (hits.length > 0) app.hitPose = hits[0].getPose(app.refSpace);
+  }
+
+  const mode = MODES[app.mode];
+  drawPanel(now);
+
+  for (const view of pose.views) {
+    const vp = layer.getViewport(view);
+    gl.viewport(vp.x, vp.y, vp.width, vp.height);
+
+    const depth = acquireDepth(frame, view);
+    if (view.eye !== 'right') {
+      app.stats.hasDepth = !!depth;
+      if (depth) {
+        app.stats.w = depth.width; app.stats.h = depth.height;
+        app.stats.raw = depth.rawValueToMeters;
+        app.stats.textureType = depth.textureType;
+        app.stats.center = depth.center;
+      }
+    }
+
+    const isArray = depth ? depth.isArray : false;
+    const progs = getPrograms(isArray);
+    const viewMatrix = view.transform.inverse.matrix;
+
+    // 1) 深度可视化(铺满视口,画在最底层)
+    if (mode.viz && depth) {
+      gl.disable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.useProgram(progs.viz.program);
+      bindDepthUniforms(gl, progs.viz, depth, isArray);
+      gl.uniform1f(progs.viz.u.uRange, DEPTH_RANGE);
+      gl.uniform1f(progs.viz.u.uAlpha, 0.72);
+      gl.bindBuffer(gl.ARRAY_BUFFER, app.buffers.quad.buf);
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
+      gl.disableVertexAttribArray(1);
+      gl.drawArrays(gl.TRIANGLES, 0, app.buffers.quad.count);
+    }
+
+    // 2) 虚拟物体(带遮挡)
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LESS);
+    gl.disable(gl.BLEND);
+    gl.useProgram(progs.solid.program);
+    bindDepthUniforms(gl, progs.solid, depth, isArray);
+    gl.uniformMatrix4fv(progs.solid.u.uProj, false, view.projectionMatrix);
+    gl.uniformMatrix4fv(progs.solid.u.uView, false, viewMatrix);
+    gl.uniform4f(progs.solid.u.uViewport, vp.x, vp.y, vp.width, vp.height);
+    gl.uniform1f(progs.solid.u.uOcclusion, (mode.occl && depth) ? 1 : 0);
+    gl.uniform1f(progs.solid.u.uAlpha, 1.0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, app.buffers.cube.buf);
+    gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+    gl.uniform1f(progs.solid.u.uUnlit, 0);
+    for (const obj of app.objects) {
+      gl.uniformMatrix4fv(progs.solid.u.uModel, false, obj.model);
+      gl.uniform3fv(progs.solid.u.uColor, obj.color);
+      gl.drawArrays(gl.TRIANGLES, 0, app.buffers.cube.count);
+    }
+
+    // 3) 落点指示环(不参与遮挡,始终可见)
+    if (app.hitPose) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, app.buffers.ring.buf);
+      gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+      gl.uniform1f(progs.solid.u.uOcclusion, 0);
+      gl.uniform1f(progs.solid.u.uUnlit, 1);
+      gl.uniform3f(progs.solid.u.uColor, 0.64, 0.99, 0.24);
+      gl.uniformMatrix4fv(progs.solid.u.uModel, false, app.hitPose.transform.matrix);
+      gl.drawArrays(gl.TRIANGLES, 0, app.buffers.ring.count);
+    }
+
+    // 4) 信息面板,跟随头部
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const pp = app.panelProgram;
+    gl.useProgram(pp.program);
+    gl.uniformMatrix4fv(pp.u.uProj, false, view.projectionMatrix);
+    gl.uniformMatrix4fv(pp.u.uView, false, viewMatrix);
+    gl.uniformMatrix4fv(pp.u.uModel, false,
+      mat4Mul(pose.transform.matrix, mat4Translate(0, -0.26, -0.75)));
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, app.panel.tex);
+    gl.uniform1i(pp.u.uTex, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, app.buffers.panel.buf);
+    gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
+    gl.drawArrays(gl.TRIANGLES, 0, app.buffers.panel.count);
+  }
+}
+</script>
+</body>
+</html>
